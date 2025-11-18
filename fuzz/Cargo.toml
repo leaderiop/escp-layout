@@ -1,0 +1,30 @@
+[package]
+name = "escp-layout-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.escp-layout]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_region"
+path = "fuzz_targets/fuzz_region.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_render"
+path = "fuzz_targets/fuzz_render.rs"
+test = false
+doc = false
