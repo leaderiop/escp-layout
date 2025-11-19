@@ -22,7 +22,7 @@ pub use region::Region;
 pub use widgets::{
     Widget,
     Label, TextBlock, Paragraph,
-    ASCIIBox, KeyValueList, Table, ColumnDef
+    ASCIIRect, KeyValueList, Table, ColumnDef
 };
 pub use error::LayoutError;
 ```
@@ -38,6 +38,7 @@ Types for representing individual character cells.
 Represents a single character with style information.
 
 **Signature**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
@@ -47,6 +48,7 @@ pub struct Cell {
 ```
 
 **Constructor**:
+
 ```rust
 impl Cell {
     pub const EMPTY: Cell;
@@ -55,11 +57,13 @@ impl Cell {
 ```
 
 **Contract**:
+
 - `new()` converts non-ASCII characters to `'?'`
 - `new()` converts control characters (< 32) to `EMPTY` (character = 0)
 - `EMPTY` represents an unoccupied cell
 
 **Example**:
+
 ```rust
 let cell = Cell::new('A', StyleFlags::BOLD);
 assert_eq!(cell.character, b'A');
@@ -73,12 +77,14 @@ assert!(cell.style.bold());
 Bit-packed text style flags.
 
 **Signature**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct StyleFlags(u8);
 ```
 
 **Constants**:
+
 ```rust
 impl StyleFlags {
     pub const NONE: StyleFlags;
@@ -88,6 +94,7 @@ impl StyleFlags {
 ```
 
 **Methods**:
+
 ```rust
 impl StyleFlags {
     pub fn bold(self) -> bool;
@@ -98,10 +105,12 @@ impl StyleFlags {
 ```
 
 **Contract**:
+
 - All flag combinations are valid
 - Methods are pure (no side effects)
 
 **Example**:
+
 ```rust
 let style = StyleFlags::NONE
     .with_bold(true)
@@ -121,6 +130,7 @@ Types for defining rectangular page regions.
 Rectangular area within a page.
 
 **Signature**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Region {
@@ -132,6 +142,7 @@ pub struct Region {
 ```
 
 **Constants**:
+
 ```rust
 impl Region {
     pub const PAGE_WIDTH: u16 = 160;
@@ -140,6 +151,7 @@ impl Region {
 ```
 
 **Constructor**:
+
 ```rust
 impl Region {
     pub fn new(x: u16, y: u16, width: u16, height: u16)
@@ -149,6 +161,7 @@ impl Region {
 ```
 
 **Operations**:
+
 ```rust
 impl Region {
     pub fn split_vertical(&self, top_height: u16)
@@ -163,17 +176,20 @@ impl Region {
 ```
 
 **Contract**:
+
 - `new()` validates `x + width <= 160` and `y + height <= 51`
 - `split_*()` methods validate split dimensions fit within parent
 - `with_padding()` validates padding doesn't exceed region size
 - Zero-width or zero-height regions are valid
 
 **Errors**:
+
 - Returns `LayoutError::RegionOutOfBounds` if coordinates exceed page bounds
 - Returns `LayoutError::InvalidSplit` if split dimensions invalid
 - Returns `LayoutError::InvalidDimensions` if padding calculation underflows
 
 **Example**:
+
 ```rust
 let page_region = Region::full_page();
 let (header, body) = page_region.split_vertical(10)?;
@@ -194,11 +210,13 @@ Types for constructing and representing pages.
 Immutable 160×51 character grid.
 
 **Signature**:
+
 ```rust
 pub struct Page { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl Page {
     pub fn builder() -> PageBuilder;
@@ -206,6 +224,7 @@ impl Page {
 ```
 
 **Accessors**:
+
 ```rust
 impl Page {
     pub fn get_cell(&self, x: u16, y: u16) -> Option<Cell>;
@@ -214,14 +233,17 @@ impl Page {
 ```
 
 **Contract**:
+
 - Immutable after construction (no mutable methods)
 - `get_cell()` returns `None` for out-of-bounds coordinates
 - `cells()` provides read-only access to entire grid
 
 **Traits**:
+
 - `Debug`, `Clone`
 
 **Example**:
+
 ```rust
 let page = Page::builder()
     .write_str(0, 0, "Hello", StyleFlags::BOLD)
@@ -237,11 +259,13 @@ assert_eq!(page.get_cell(0, 0).unwrap().character, b'H');
 Mutable builder for constructing pages.
 
 **Signature**:
+
 ```rust
 pub struct PageBuilder { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl PageBuilder {
     pub fn new() -> Self;
@@ -249,6 +273,7 @@ impl PageBuilder {
 ```
 
 **Write Operations** (chainable):
+
 ```rust
 impl PageBuilder {
     pub fn write_at(&mut self, x: u16, y: u16, ch: char, style: StyleFlags)
@@ -266,6 +291,7 @@ impl PageBuilder {
 ```
 
 **Finalization**:
+
 ```rust
 impl PageBuilder {
     pub fn build(self) -> Page;
@@ -273,12 +299,14 @@ impl PageBuilder {
 ```
 
 **Contract**:
+
 - All write operations silently truncate out-of-bounds coordinates (no panic)
 - Multiple writes to same cell: last write wins
 - `build()` consumes builder, returns immutable `Page`
 - Builder cannot be reused after `build()`
 
 **Example**:
+
 ```rust
 let page = PageBuilder::new()
     .write_str(0, 0, "Invoice #12345", StyleFlags::BOLD)
@@ -298,11 +326,13 @@ Types for multi-page documents.
 Immutable collection of pages.
 
 **Signature**:
+
 ```rust
 pub struct Document { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl Document {
     pub fn builder() -> DocumentBuilder;
@@ -310,6 +340,7 @@ impl Document {
 ```
 
 **Accessors**:
+
 ```rust
 impl Document {
     pub fn pages(&self) -> &[Page];
@@ -318,6 +349,7 @@ impl Document {
 ```
 
 **Rendering**:
+
 ```rust
 impl Document {
     pub fn render(&self) -> Vec<u8>;
@@ -325,15 +357,18 @@ impl Document {
 ```
 
 **Contract**:
+
 - Immutable after construction
 - `render()` produces ESC/P byte stream
 - `render()` is deterministic (same document → same bytes)
 - Empty documents (0 pages) are valid
 
 **Traits**:
+
 - `Debug`, `Clone`
 
 **Example**:
+
 ```rust
 let doc = Document::builder()
     .add_page(page1)
@@ -351,11 +386,13 @@ let escp_bytes = doc.render();
 Mutable builder for constructing documents.
 
 **Signature**:
+
 ```rust
 pub struct DocumentBuilder { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl DocumentBuilder {
     pub fn new() -> Self;
@@ -363,6 +400,7 @@ impl DocumentBuilder {
 ```
 
 **Operations** (chainable):
+
 ```rust
 impl DocumentBuilder {
     pub fn add_page(&mut self, page: Page) -> &mut Self;
@@ -370,6 +408,7 @@ impl DocumentBuilder {
 ```
 
 **Finalization**:
+
 ```rust
 impl DocumentBuilder {
     pub fn build(self) -> Document;
@@ -377,11 +416,13 @@ impl DocumentBuilder {
 ```
 
 **Contract**:
+
 - Pages must be finalized before adding (type-safe)
 - Pages added in order they will be rendered
 - `build()` consumes builder, returns immutable `Document`
 
 **Example**:
+
 ```rust
 let mut builder = DocumentBuilder::new();
 
@@ -404,6 +445,7 @@ Built-in widget types and trait.
 Common interface for renderable content.
 
 **Signature**:
+
 ```rust
 pub trait Widget {
     fn render(&self, page: &mut PageBuilder, region: Region);
@@ -411,6 +453,7 @@ pub trait Widget {
 ```
 
 **Contract**:
+
 - MUST NOT write outside region boundaries
 - MUST handle zero-size regions gracefully (render nothing)
 - MUST truncate content exceeding region size
@@ -423,11 +466,13 @@ pub trait Widget {
 Single-line text widget.
 
 **Signature**:
+
 ```rust
 pub struct Label { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl Label {
     pub fn new(text: impl Into<String>) -> Self;
@@ -436,11 +481,13 @@ impl Label {
 ```
 
 **Behavior**:
+
 - Renders on first line of region
 - Truncates if text exceeds region width
 - Ignores region height (only uses line 0)
 
 **Example**:
+
 ```rust
 let label = Label::new("Product Name")
     .with_style(StyleFlags::BOLD);
@@ -455,11 +502,13 @@ page.render_widget(region, &label);
 Multi-line text without word wrapping.
 
 **Signature**:
+
 ```rust
 pub struct TextBlock { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl TextBlock {
     pub fn new(lines: Vec<String>) -> Self;
@@ -468,6 +517,7 @@ impl TextBlock {
 ```
 
 **Behavior**:
+
 - One line per string in `lines`
 - `from_text()` splits on `\n`
 - Truncates lines exceeding width
@@ -475,6 +525,7 @@ impl TextBlock {
 - No word wrapping
 
 **Example**:
+
 ```rust
 let text = TextBlock::from_text("Line 1\nLine 2\nLine 3");
 page.render_widget(region, &text);
@@ -487,11 +538,13 @@ page.render_widget(region, &text);
 Multi-line text with word wrapping.
 
 **Signature**:
+
 ```rust
 pub struct Paragraph { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl Paragraph {
     pub fn new(text: impl Into<String>) -> Self;
@@ -500,12 +553,14 @@ impl Paragraph {
 ```
 
 **Behavior**:
+
 - Wraps at word boundaries
 - Breaks words if single word exceeds width
 - Truncates lines exceeding region height
 - Preserves spaces between words
 
 **Example**:
+
 ```rust
 let para = Paragraph::new("This is a long paragraph that will wrap across multiple lines.")
     .with_style(StyleFlags::NONE);
@@ -515,35 +570,39 @@ page.render_widget(region, &para);
 
 ---
 
-### Type: `ASCIIBox`
+### Type: `ASCIIRect`
 
-Bordered box with optional title.
+Bordered rect with optional title.
 
 **Signature**:
+
 ```rust
-pub struct ASCIIBox { /* private */ }
+pub struct ASCIIRect { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
-impl ASCIIBox {
-    pub fn new(content: Box<dyn Widget>) -> Self;
+impl ASCIIRect {
+    pub fn new(content: Rect<dyn Widget>) -> Self;
     pub fn with_title(self, title: impl Into<String>) -> Self;
 }
 ```
 
 **Behavior**:
+
 - Draws border using `+`, `-`, `|` characters
 - Title rendered in top border if present
 - Content rendered in inset region (1-cell padding)
 - Requires minimum 3×3 region
 
 **Example**:
+
 ```rust
-let boxed = ASCIIBox::new(Box::new(Label::new("Content")))
+let rected = ASCIIRect::new(Rect::new(Label::new("Content")))
     .with_title("Section Title");
 
-page.render_widget(region, &boxed);
+page.render_widget(region, &rected);
 ```
 
 ---
@@ -553,11 +612,13 @@ page.render_widget(region, &boxed);
 Vertically aligned key-value pairs.
 
 **Signature**:
+
 ```rust
 pub struct KeyValueList { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl KeyValueList {
     pub fn new(entries: Vec<(String, String)>) -> Self;
@@ -566,12 +627,14 @@ impl KeyValueList {
 ```
 
 **Behavior**:
+
 - One entry per line
 - Default separator: `": "`
 - Truncates entry if exceeds width
 - Truncates entries if exceed height
 
 **Example**:
+
 ```rust
 let kv_list = KeyValueList::new(vec![
     ("Name".into(), "John Doe".into()),
@@ -589,11 +652,13 @@ page.render_widget(region, &kv_list);
 Fixed-column tabular data.
 
 **Signature**:
+
 ```rust
 pub struct Table { /* private */ }
 ```
 
 **Constructor**:
+
 ```rust
 impl Table {
     pub fn new(columns: Vec<ColumnDef>, rows: Vec<Vec<String>>) -> Self;
@@ -601,6 +666,7 @@ impl Table {
 ```
 
 **Behavior**:
+
 - First line renders column headers (bold)
 - Subsequent lines render rows
 - Cells truncated to column width
@@ -608,6 +674,7 @@ impl Table {
 - Left-aligned by default
 
 **Example**:
+
 ```rust
 let table = Table::new(
     vec![
@@ -631,6 +698,7 @@ page.render_widget(region, &table);
 Column definition for tables.
 
 **Signature**:
+
 ```rust
 #[derive(Clone, Debug)]
 pub struct ColumnDef {
@@ -652,6 +720,7 @@ Error types.
 Recoverable layout construction errors.
 
 **Signature**:
+
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LayoutError {
@@ -662,14 +731,17 @@ pub enum LayoutError {
 ```
 
 **Traits**:
+
 - `Display`, `Error`, `Debug`, `Clone`, `PartialEq`, `Eq`
 
 **Variants**:
+
 - `RegionOutOfBounds`: Region coordinates exceed page bounds (160×51)
 - `InvalidDimensions`: Width, height, or padding calculation invalid
 - `InvalidSplit`: Split dimensions exceed parent region
 
 **Example**:
+
 ```rust
 match Region::new(200, 0, 10, 10) {
     Ok(region) => { /* use region */ },
@@ -687,18 +759,21 @@ match Region::new(200, 0, 10, 10) {
 ### V1.x.x Series
 
 **Guaranteed**:
+
 - No breaking changes to public API
 - ESC/P output format remains byte-compatible
 - Deterministic rendering guarantees maintained
 - Error types and semantics unchanged
 
 **Allowed**:
+
 - New widget types added
 - New optional methods on existing types
 - Performance optimizations (no behavior changes)
 - Bug fixes that don't change output
 
 **Deprecated APIs**:
+
 - Will emit warnings for ≥ 1 minor version before removal
 - Removal requires MAJOR version bump
 
@@ -707,13 +782,16 @@ match Region::new(200, 0, 10, 10) {
 ## Thread Safety
 
 **Send + Sync Types**:
+
 - `Cell`, `StyleFlags`, `Region` (Copy types, inherently thread-safe)
 - `Page`, `Document` (immutable, safe to share across threads)
 
 **Not Send/Sync**:
+
 - `PageBuilder`, `DocumentBuilder` (mutable, not intended for concurrent use)
 
 **Usage**:
+
 ```rust
 let doc: Document = /* ... */;
 
@@ -728,28 +806,28 @@ std::thread::spawn(move || {
 
 ## Performance Characteristics
 
-| Operation | Time Complexity | Notes |
-|-----------|----------------|-------|
-| `Cell::new()` | O(1) | Constant time |
-| `Region::new()` | O(1) | Bounds checking only |
-| `PageBuilder::write_at()` | O(1) | Direct array indexing |
-| `PageBuilder::write_str()` | O(n) | n = string length |
-| `PageBuilder::build()` | O(1) | Moves data, no copy |
-| `DocumentBuilder::add_page()` | O(1) amortized | Vec push |
-| `Document::render()` | O(p × 160 × 51) | p = page count, linear in total cells |
-| Widget rendering | O(region area) | Varies by widget type |
+| Operation                     | Time Complexity | Notes                                 |
+| ----------------------------- | --------------- | ------------------------------------- |
+| `Cell::new()`                 | O(1)            | Constant time                         |
+| `Region::new()`               | O(1)            | Bounds checking only                  |
+| `PageBuilder::write_at()`     | O(1)            | Direct array indexing                 |
+| `PageBuilder::write_str()`    | O(n)            | n = string length                     |
+| `PageBuilder::build()`        | O(1)            | Moves data, no copy                   |
+| `DocumentBuilder::add_page()` | O(1) amortized  | Vec push                              |
+| `Document::render()`          | O(p × 160 × 51) | p = page count, linear in total cells |
+| Widget rendering              | O(region area)  | Varies by widget type                 |
 
 ---
 
 ## Memory Usage
 
-| Type | Approximate Size |
-|------|------------------|
-| `Cell` | 2 bytes |
-| `StyleFlags` | 1 byte |
-| `Region` | 8 bytes |
-| `Page` | ~16 KB (8,160 cells × 2 bytes) |
-| `Document` | 8 bytes + page size × page count |
+| Type         | Approximate Size                 |
+| ------------ | -------------------------------- |
+| `Cell`       | 2 bytes                          |
+| `StyleFlags` | 1 byte                           |
+| `Region`     | 8 bytes                          |
+| `Page`       | ~16 KB (8,160 cells × 2 bytes)   |
+| `Document`   | 8 bytes + page size × page count |
 
 ---
 
@@ -826,8 +904,8 @@ fn create_report_page() -> Page {
     let mut page = PageBuilder::new();
 
     // Render header
-    page.render_widget(&header, &ASCIIBox::new(
-        Box::new(Label::new("Monthly Report"))
+    page.render_widget(&header, &ASCIIRect::new(
+        Rect::new(Label::new("Monthly Report"))
     ).with_title("Header"));
 
     // Render sidebar

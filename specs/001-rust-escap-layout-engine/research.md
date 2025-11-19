@@ -10,24 +10,27 @@ This document captures technical research and architectural decisions made durin
 
 ### Decision 1: Memory Layout for Cell Grid
 
-**Decision**: Use row-major contiguous `Box<[[Cell; 160]; 51]>` for page storage
+**Decision**: Use row-major contiguous `Rect<[[Cell; 160]; 51]>` for page storage
 
 **Rationale**:
+
 - **Cache efficiency**: Row-major layout matches line-by-line rendering pattern (reading left-to-right, top-to-bottom)
 - **Fixed size**: Array provides compile-time size guarantees (160 × 51 = 8,160 cells)
 - **Zero dynamic allocation**: No Vec growth or reallocation during rendering
 - **Bounds checking**: Rust array indexing provides automatic bounds checking
-- **Box allocation**: Prevents stack overflow (8KB+ structure) while maintaining contiguity
+- **Rect allocation**: Prevents stack overflow (8KB+ structure) while maintaining contiguity
 
 **Alternatives considered**:
+
 - `Vec<Cell>` with manual indexing: Rejected due to dynamic allocation overhead
 - Column-major layout: Rejected due to poor cache locality for line rendering
 - Flat array with index calculation: Considered equivalent, but 2D array syntax is clearer
 
 **Implementation notes**:
+
 ```rust
 pub struct Page {
-    cells: Box<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
+    cells: Rect<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
     finalized: bool,
 }
 
@@ -42,12 +45,14 @@ const PAGE_HEIGHT: usize = 51;
 **Decision**: Use compact `Cell` struct with bit-packed style flags
 
 **Rationale**:
+
 - **Memory efficiency**: Target 2 bytes per cell (1 byte char + 1 byte flags)
 - **Style storage**: Bold and underline fit in 2 bits, leaving room for future expansion
 - **Alignment**: Struct naturally aligns to 2-byte boundary
 - **Copy semantics**: Small size makes `Copy` trait viable (efficient pass-by-value)
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
@@ -66,6 +71,7 @@ impl StyleFlags {
 ```
 
 **Alternatives considered**:
+
 - Separate bool fields: Rejected due to padding overhead (4+ bytes per cell)
 - Single u16 with char + styles: Rejected due to endianness concerns and less clear API
 - Enum for styles: Rejected due to inability to combine styles (bold + underline)
@@ -77,12 +83,14 @@ impl StyleFlags {
 **Decision**: Use lightweight `Region` struct with copy semantics
 
 **Rationale**:
+
 - **Zero-copy views**: Regions are coordinate ranges, not data copies
 - **Stack allocation**: Small struct (4 × u16 = 8 bytes) stays on stack
 - **No lifetimes needed**: Copy semantics eliminate borrow checker complexity
 - **Validation**: Bounds checking at creation time ensures validity
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Region {
@@ -111,6 +119,7 @@ impl Region {
 ```
 
 **Alternatives considered**:
+
 - Reference-based regions with lifetimes: Rejected due to API complexity
 - Regions storing cell slices: Rejected due to inability to represent non-contiguous sub-regions
 - Separate RegionBuilder: Rejected as overkill for simple validation
@@ -122,12 +131,14 @@ impl Region {
 **Decision**: Use consuming builder pattern with phantom types for state enforcement
 
 **Rationale**:
+
 - **Compile-time safety**: Type state pattern prevents invalid API usage
 - **Ergonomics**: Method chaining provides fluent API
 - **Zero-cost abstraction**: Phantom types compile away (zero runtime overhead)
 - **Clear lifecycle**: Distinct Building → Finalized states
 
 **Implementation**:
+
 ```rust
 // Type state pattern
 pub struct Building;
@@ -145,7 +156,7 @@ impl DocumentBuilder<Building> {
 }
 
 pub struct PageBuilder<'doc, State = Building> {
-    cells: Box<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
+    cells: Rect<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
     _state: PhantomData<State>,
     _lifetime: PhantomData<&'doc ()>,
 }
@@ -159,6 +170,7 @@ impl<'doc> PageBuilder<'doc, Building> {
 ```
 
 **Alternatives considered**:
+
 - Runtime state flags: Rejected due to missing compile-time guarantees
 - Separate builder and finalized types: Adopted (type state pattern)
 - Mutable Document: Rejected due to immutability requirements (Constitution IV)
@@ -170,12 +182,14 @@ impl<'doc> PageBuilder<'doc, Building> {
 **Decision**: Implement explicit style state machine with minimal transitions
 
 **Rationale**:
+
 - **Deterministic output**: Explicit state tracking ensures byte-for-byte reproducibility
 - **Optimization**: Track current style state to emit only necessary state changes
 - **Correctness**: Guarantee style reset at line/page boundaries
 - **Testability**: State machine logic isolated and unit testable
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct RenderState {
@@ -207,6 +221,7 @@ impl RenderState {
 ```
 
 **Alternatives considered**:
+
 - Emit all style codes every time: Rejected due to bloated output size
 - Stateless rendering: Rejected due to inability to optimize redundant codes
 - Global style state: Rejected due to non-determinism risks
@@ -218,12 +233,14 @@ impl RenderState {
 **Decision**: Use trait objects with `&dyn Widget` for runtime polymorphism
 
 **Rationale**:
+
 - **Flexibility**: Users can create custom widgets by implementing trait
 - **Type erasure**: Allows heterogeneous widget collections
 - **No generics explosion**: Avoids monomorphization of every widget combination
 - **Clear contract**: Single `render()` method defines widget behavior
 
 **Implementation**:
+
 ```rust
 pub trait Widget {
     fn render(&self, page: &mut PageBuilder, region: Region);
@@ -233,7 +250,7 @@ pub trait Widget {
 pub struct Label { text: String, style: StyleFlags }
 pub struct TextBlock { lines: Vec<String> }
 pub struct Paragraph { text: String, style: StyleFlags }
-pub struct ASCIIBox { title: Option<String>, content: Box<dyn Widget> }
+pub struct ASCIIRect { title: Option<String>, content: Rect<dyn Widget> }
 pub struct KeyValueList { entries: Vec<(String, String)> }
 pub struct Table { columns: Vec<ColumnDef>, rows: Vec<Vec<String>> }
 
@@ -247,6 +264,7 @@ impl Widget for Label {
 ```
 
 **Alternatives considered**:
+
 - Enum of widget types: Rejected due to inability to support custom user widgets
 - Generic `impl Widget for T`: Rejected due to type parameter complexity
 - Separate render functions: Rejected due to lack of extensibility
@@ -258,12 +276,14 @@ impl Widget for Label {
 **Decision**: Use `Result<T, LayoutError>` for recoverable errors, silent truncation for overflow
 
 **Rationale**:
+
 - **Geometry errors are recoverable**: Invalid dimensions should be caught at build time
 - **Overflow is not an error**: Constitution Principle III mandates silent truncation
 - **Clear API contract**: Errors documented via Result type
 - **No panics**: Constitution Principle IX forbids panics in release builds
 
 **Implementation**:
+
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LayoutError {
@@ -286,6 +306,7 @@ impl std::error::Error for LayoutError {}
 ```
 
 **Alternatives considered**:
+
 - Panic on errors: Rejected due to Constitution requirement (zero panics)
 - Return Option: Rejected due to loss of error context
 - Custom error types per module: Rejected as overkill for small error surface
@@ -297,6 +318,7 @@ impl std::error::Error for LayoutError {}
 **Decision**: Multi-layered testing with unit, integration, property-based, fuzzing, and golden master tests
 
 **Rationale**:
+
 - **Unit tests**: Fast feedback, high coverage of individual functions
 - **Integration tests**: End-to-end validation of API contracts
 - **Property-based tests**: Verify invariants hold for all inputs (determinism, no panics, truncation correctness)
@@ -304,6 +326,7 @@ impl std::error::Error for LayoutError {}
 - **Golden master tests**: Byte-level ESC/P output verification
 
 **Implementation**:
+
 ```toml
 # Cargo.toml dev-dependencies
 [dev-dependencies]
@@ -316,6 +339,7 @@ codegen-units = 1
 ```
 
 **Test structure**:
+
 ```
 tests/
 ├── unit/
@@ -342,6 +366,7 @@ tests/
 ```
 
 **Alternatives considered**:
+
 - Unit tests only: Rejected due to insufficient coverage of integration behavior
 - Snapshot testing instead of golden files: Rejected due to binary ESC/P format requirements
 - Manual hardware testing only: Rejected due to slow feedback loop
@@ -353,12 +378,14 @@ tests/
 **Decision**: Organize code into clear domain-focused modules
 
 **Rationale**:
+
 - **Separation of concerns**: Layout, widgets, and ESC/P rendering are distinct domains
 - **Testability**: Isolated modules enable focused unit tests
 - **Maintainability**: Clear boundaries reduce coupling
 - **Future extensibility**: New widgets or ESC/P features can be added in existing modules
 
 **Structure**:
+
 ```
 src/
 ├── lib.rs              // Public API exports
@@ -371,7 +398,7 @@ src/
 │   ├── label.rs        // Label widget
 │   ├── text_block.rs   // TextBlock widget
 │   ├── paragraph.rs    // Paragraph widget
-│   ├── ascii_box.rs    // ASCIIBox widget
+│   ├── ascii_rect.rs    // ASCIIRect widget
 │   ├── key_value.rs    // KeyValueList widget
 │   └── table.rs        // Table widget
 ├── escp/
@@ -383,6 +410,7 @@ src/
 ```
 
 **Alternatives considered**:
+
 - Flat module structure: Rejected due to poor organization
 - Feature-based modules (builders/, rendering/): Rejected due to cross-cutting concerns
 - Separate crates for widgets: Rejected as premature optimization for V1
@@ -394,12 +422,14 @@ src/
 **Decision**: Use const byte arrays for ESC/P commands with inline documentation
 
 **Rationale**:
+
 - **Correctness**: Hard-coded byte sequences eliminate transcription errors
 - **Readability**: Named constants self-document command purpose
 - **Testability**: Easy to verify against ESC/P specification
 - **Performance**: Compile-time constants have zero overhead
 
 **Implementation**:
+
 ```rust
 // src/escp/constants.rs
 
@@ -434,6 +464,7 @@ pub const FF: u8 = 0x0C;
 **Reference**: EPSON LQ-2090II ESC/P2 Reference Manual, Text Mode Commands Section
 
 **Alternatives considered**:
+
 - Runtime string encoding: Rejected due to performance overhead
 - Macro generation: Rejected as unnecessary complexity
 - Hex literals in code: Rejected due to poor readability
@@ -447,6 +478,7 @@ pub const FF: u8 = 0x0C;
 **Source**: Rust API Guidelines (https://rust-lang.github.io/api-guidelines/)
 
 **Applied principles**:
+
 - **C-CONV**: Follow naming conventions (snake_case for functions, PascalCase for types)
 - **C-EXAMPLE**: All public APIs have rustdoc examples
 - **C-FAILURE**: Errors use Result type and implement std::error::Error
@@ -459,6 +491,7 @@ pub const FF: u8 = 0x0C;
 **Technique**: Use copy-on-write semantics and lightweight views
 
 **Applied to**:
+
 - **Regions**: Copy semantics avoid lifetime complexity
 - **Cell access**: Direct array indexing (no intermediate buffers)
 - **ESC/P rendering**: Write directly to output Vec<u8> (no intermediate strings)
@@ -470,12 +503,14 @@ pub const FF: u8 = 0x0C;
 **Framework**: proptest
 
 **Properties to test**:
+
 1. **Idempotence**: `render(doc) == render(doc)` for all doc
 2. **Commutativity**: Page order matters, but identical pages produce identical output
 3. **Truncation**: No panic for any (x, y, text) combination
 4. **Bounds**: All output indices stay within [0, 160) × [0, 51)
 
 **Example**:
+
 ```rust
 use proptest::prelude::*;
 

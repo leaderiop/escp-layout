@@ -8,15 +8,15 @@
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document Version** | 1.0 |
-| **Product Version** | V1.0 |
-| **Author** | Mohammad AlMechkor |
-| **Status** | Draft |
-| **Classification** | Public - API Documentation |
-| **Date Created** | 2025-01-18 |
-| **Last Updated** | 2025-01-18 |
+| Field                | Value                      |
+| -------------------- | -------------------------- |
+| **Document Version** | 1.0                        |
+| **Product Version**  | V1.0                       |
+| **Author**           | Mohammad AlMechkor         |
+| **Status**           | Draft                      |
+| **Classification**   | Public - API Documentation |
+| **Date Created**     | 2025-01-18                 |
+| **Last Updated**     | 2025-01-18                 |
 
 ### Related Documents
 
@@ -67,6 +67,7 @@ The EPSON LQ-2090II Rust Layout Engine provides a type-safe, deterministic API f
 ### 1.3 Audience
 
 This document is for:
+
 - Application developers integrating the library
 - API users writing invoices, forms, and documents
 - Library maintainers documenting changes
@@ -78,6 +79,7 @@ This document is for:
 ### 2.1 Adding the Dependency
 
 **Cargo.toml**:
+
 ```toml
 [dependencies]
 epson-lq2090-layout = "1.0"
@@ -91,6 +93,7 @@ epson-lq2090-layout = { version = "1.0", features = ["serde"] }
 ```
 
 **Available Features**:
+
 - `serde`: Enable serialization/deserialization support
 
 ### 2.3 MSRV
@@ -219,12 +222,12 @@ let style = Style {
 
 #### ESC/P Mapping
 
-| Style | ESC/P Commands |
-|-------|----------------|
-| `NORMAL` | `ESC F`, `ESC - 0` (disable all) |
-| `BOLD` | `ESC E` |
-| `UNDERLINE` | `ESC - 1` |
-| `BOLD_UNDERLINE` | `ESC E`, `ESC - 1` |
+| Style            | ESC/P Commands                   |
+| ---------------- | -------------------------------- |
+| `NORMAL`         | `ESC F`, `ESC - 0` (disable all) |
+| `BOLD`           | `ESC E`                          |
+| `UNDERLINE`      | `ESC - 1`                        |
+| `BOLD_UNDERLINE` | `ESC E`, `ESC - 1`               |
 
 ---
 
@@ -308,6 +311,7 @@ pub struct DocumentBuilder { /* private */ }
 Creates a new document builder.
 
 **Example**:
+
 ```rust
 let doc = DocumentBuilder::new();
 ```
@@ -323,6 +327,7 @@ Adds a new page and returns a builder for configuring it.
 **Lifetime**: The returned `PageBuilder` borrows from this `DocumentBuilder`.
 
 **Example**:
+
 ```rust
 let mut doc = DocumentBuilder::new();
 let page1 = doc.add_page();
@@ -340,6 +345,7 @@ Finalizes and returns an immutable `Document`.
 **Consumes**: This method consumes the builder.
 
 **Example**:
+
 ```rust
 let mut doc = DocumentBuilder::new();
 doc.add_page();
@@ -393,6 +399,7 @@ pub struct PageBuilder<'doc> { /* private */ }
 Returns a handle to the root region (160 columns × 51 rows).
 
 **Example**:
+
 ```rust
 let mut page = doc.add_page();
 let mut root = page.root_region();
@@ -410,6 +417,7 @@ Finalizes the page. Currently always returns `Ok(())`.
 **Consumes**: This method consumes the page builder.
 
 **Example**:
+
 ```rust
 let page = doc.add_page();
 page.finalize()?;
@@ -460,6 +468,7 @@ pub struct RegionHandle<'page> { /* private */ }
 Writes text at local coordinates (relative to region origin).
 
 **Parameters**:
+
 - `x`: Column offset (0-based, relative to region)
 - `y`: Row offset (0-based, relative to region)
 - `text`: Text to write (UTF-8, non-ASCII replaced with '?')
@@ -468,11 +477,13 @@ Writes text at local coordinates (relative to region origin).
 **Returns**: `&mut Self` for method chaining
 
 **Behavior**:
+
 - Truncates horizontally at region width
 - Silently ignores if `y >= region.height`
 - Non-ASCII characters replaced with `'?'`
 
 **Example**:
+
 ```rust
 region.write_text(0, 0, "Line 1", Style::NORMAL)
       .write_text(0, 1, "Line 2", Style::BOLD)
@@ -488,15 +499,18 @@ region.write_text(0, 0, "Line 1", Style::NORMAL)
 Convenience method to add a single-line label with alignment.
 
 **Parameters**:
+
 - `text`: Label text
 - `alignment`: Left, Center, or Right
 
 **Example**:
+
 ```rust
 region.label("Centered Title", Alignment::Center);
 ```
 
 **Equivalent to**:
+
 ```rust
 use epson_lq2090_layout::widgets::Label;
 
@@ -513,14 +527,17 @@ region.add_widget(label).unwrap();
 Splits the region horizontally into N subregions with given ratios.
 
 **Parameters**:
+
 - `ratios`: Slice of relative widths (e.g., `&[1, 2, 1]` = 25%, 50%, 25%)
 
 **Returns**: `Vec<RegionHandle<'_>>` with N handles
 
 **Errors**:
+
 - `InvalidSplitRatios` if `ratios.is_empty()`
 
 **Example**:
+
 ```rust
 let mut cols = region.split_horizontal(&[1, 2, 1]).unwrap();
 // cols[0] = 25% width
@@ -541,14 +558,17 @@ cols[2].label("Right", Alignment::Right);
 Splits the region vertically into N subregions with given ratios.
 
 **Parameters**:
+
 - `ratios`: Slice of relative heights
 
 **Returns**: `Vec<RegionHandle<'_>>` with N handles
 
 **Errors**:
+
 - `InvalidSplitRatios` if `ratios.is_empty()`
 
 **Example**:
+
 ```rust
 let mut rows = region.split_vertical(&[10, 35, 6]).unwrap();
 // rows[0] = header (10/51 = ~20%)
@@ -565,15 +585,18 @@ let mut rows = region.split_vertical(&[10, 35, 6]).unwrap();
 Creates an M×N grid of equal-sized subregions.
 
 **Parameters**:
+
 - `rows`: Number of rows
 - `cols`: Number of columns
 
 **Returns**: `Vec<Vec<RegionHandle<'_>>>` (2D grid)
 
 **Errors**:
+
 - `InvalidDimensions` if `rows == 0 || cols == 0`
 
 **Example**:
+
 ```rust
 let grid = region.grid(3, 4).unwrap(); // 3 rows × 4 columns
 
@@ -593,11 +616,13 @@ for (i, row) in grid.iter_mut().enumerate() {
 Applies padding to the region (reduces inner usable area).
 
 **Parameters**:
+
 - `top`, `right`, `bottom`, `left`: Padding in cells
 
 **Returns**: `&mut Self` for chaining
 
 **Example**:
+
 ```rust
 region.with_padding(1, 2, 1, 2) // Top/bottom=1, left/right=2
       .write_text(0, 0, "Padded content", Style::NORMAL);
@@ -612,11 +637,13 @@ region.with_padding(1, 2, 1, 2) // Top/bottom=1, left/right=2
 Sets the default style for all text written to this region.
 
 **Parameters**:
+
 - `style`: Default style
 
 **Returns**: `&mut Self` for chaining
 
 **Example**:
+
 ```rust
 region.set_default_style(Style::BOLD)
       .write_text(0, 0, "This is bold", Style::NORMAL); // Still uses provided style
@@ -633,16 +660,19 @@ region.set_default_style(Style::BOLD)
 Creates a child region at specific coordinates.
 
 **Parameters**:
+
 - `x`, `y`: Origin (relative to parent region)
 - `width`, `height`: Dimensions
 
 **Returns**: `RegionHandle<'_>` to the child region
 
 **Errors**:
+
 - `InvalidDimensions` if `width == 0 || height == 0`
 - `RegionOutOfBounds` if child exceeds parent bounds
 
 **Example**:
+
 ```rust
 let mut child = region.child_region(10, 5, 50, 20)?;
 child.label("Nested region", Alignment::Left);
@@ -657,17 +687,21 @@ child.label("Nested region", Alignment::Left);
 Adds a widget to this region.
 
 **Type Parameter**:
+
 - `W`: Any type implementing the `Widget` trait
 
 **Parameters**:
+
 - `widget`: Widget instance
 
 **Returns**: `Result<(), LayoutError>`
 
 **Errors**:
+
 - `WidgetRenderError` if widget fails to render
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::{Table, TableStyle};
 
@@ -742,6 +776,7 @@ Renders the document to ESC/P byte stream.
 **Determinism**: Calling `render()` multiple times produces identical output.
 
 **Example**:
+
 ```rust
 let document = builder.build();
 let bytes = document.render();
@@ -762,6 +797,7 @@ std::fs::write("/dev/usb/lp0", bytes)?;
 Returns the number of pages in the document.
 
 **Example**:
+
 ```rust
 let count = document.page_count();
 println!("Document has {} page(s)", count);
@@ -807,6 +843,7 @@ pub trait Widget {
 Implement this trait to create custom widgets.
 
 **Example**:
+
 ```rust
 struct MyWidget {
     title: String,
@@ -843,10 +880,12 @@ pub struct Label {
 Creates a new label.
 
 **Parameters**:
+
 - `text`: Label text
 - `alignment`: Text alignment (Left, Center, Right)
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::Label;
 
@@ -860,6 +899,7 @@ let label = Label::new("Invoice", Alignment::Center);
 Sets the label style.
 
 **Example**:
+
 ```rust
 let label = Label::new("Title", Alignment::Center)
     .with_style(Style::BOLD_UNDERLINE);
@@ -905,9 +945,11 @@ pub struct TextBlock {
 Creates a new text block with preformatted text.
 
 **Parameters**:
+
 - `text`: Multi-line text (preserves whitespace, no wrapping)
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::TextBlock;
 
@@ -928,6 +970,7 @@ region.add_widget(block)?;
 Sets the text style.
 
 **Example**:
+
 ```rust
 let block = TextBlock::new("Code:\n  fn main() {}")
     .with_style(Style::NORMAL);
@@ -952,14 +995,17 @@ pub struct Paragraph {
 Creates a paragraph with word-wrapping.
 
 **Parameters**:
+
 - `text`: Text to wrap at region width
 
 **Behavior**:
+
 - Wraps words at spaces
 - No hyphenation
 - Vertical truncation if exceeds region height
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::Paragraph;
 
@@ -979,12 +1025,12 @@ Sets the paragraph style.
 
 ---
 
-### 6.5 Box
+### 6.5 Rect
 
 #### Definition
 
 ```rust
-pub struct Box {
+pub struct Rect {
     // private fields
 }
 ```
@@ -993,16 +1039,17 @@ pub struct Box {
 
 ##### `new() -> Self`
 
-Creates a new box with ASCII borders.
+Creates a new rect with ASCII borders.
 
 **Border Characters**: `+`, `-`, `|`
 
 **Example**:
-```rust
-use epson_lq2090_layout::widgets::Box;
 
-let mut box_widget = Box::new();
-region.add_widget(box_widget)?;
+```rust
+use epson_lq2090_layout::widgets::Rect;
+
+let mut rect_widget = Rect::new();
+region.add_widget(rect_widget)?;
 
 // Renders:
 // +------------------+
@@ -1018,8 +1065,9 @@ region.add_widget(box_widget)?;
 Adds a title to the top border.
 
 **Example**:
+
 ```rust
-let box_widget = Box::new()
+let rect_widget = Rect::new()
     .with_title("Section 1");
 
 // Renders:
@@ -1038,13 +1086,14 @@ Sets the border style.
 
 #### Inner Region
 
-The `Box` widget provides an inner region with dimensions `(width - 2, height - 2)`.
+The `Rect` widget provides an inner region with dimensions `(width - 2, height - 2)`.
 
 **Example**:
+
 ```rust
 // Get inner region handle
-let inner = box_widget.inner_region();
-inner.write_text(0, 0, "Content inside box", Style::NORMAL);
+let inner = rect_widget.inner_region();
+inner.write_text(0, 0, "Content inside rect", Style::NORMAL);
 ```
 
 ---
@@ -1066,9 +1115,11 @@ pub struct KeyValue {
 Creates a key-value list with fixed key column width.
 
 **Parameters**:
+
 - `key_width`: Width of key column
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::KeyValue;
 
@@ -1082,6 +1133,7 @@ let mut kv = KeyValue::new(20);
 Adds a key-value pair.
 
 **Example**:
+
 ```rust
 let mut kv = KeyValue::new(20);
 kv.add_pair("Invoice Number", "INV-2025-001");
@@ -1103,6 +1155,7 @@ region.add_widget(kv)?;
 Sets the separator between key and value (default: `": "`).
 
 **Example**:
+
 ```rust
 let kv = KeyValue::new(15)
     .with_separator(" = ");
@@ -1130,11 +1183,13 @@ pub struct Table {
 Creates a table with fixed column widths.
 
 **Parameters**:
+
 - `column_widths`: Width of each column in characters
 
 **Panics**: If `column_widths.is_empty()`
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::Table;
 
@@ -1149,6 +1204,7 @@ let table = Table::new(vec![30, 40, 20, 30]);
 Sets the header row.
 
 **Example**:
+
 ```rust
 let table = Table::new(vec![30, 30, 30])
     .with_headers(vec![
@@ -1165,6 +1221,7 @@ let table = Table::new(vec![30, 30, 30])
 Adds a data row.
 
 **Example**:
+
 ```rust
 let mut table = Table::new(vec![30, 30, 30]);
 table.add_row(vec!["Widget".into(), "5".into(), "$50.00".into()]);
@@ -1178,6 +1235,7 @@ table.add_row(vec!["Gadget".into(), "3".into(), "$30.00".into()]);
 Sets the table style.
 
 **Example**:
+
 ```rust
 use epson_lq2090_layout::widgets::TableStyle;
 
@@ -1245,6 +1303,7 @@ region.add_widget(table)?;
 ```
 
 **Output**:
+
 ```
 Item Code                         Description                                   Qty    Price
 -------------------------------------------------------------------------------------------------
@@ -1318,6 +1377,7 @@ These operations **do not** return errors:
 **Rationale**: Per PRD requirements FR-T1, FR-T2, FR-T3, FR-T4.
 
 **Example**:
+
 ```rust
 // Writing beyond region bounds does not error
 region.write_text(200, 100, "Out of bounds", Style::NORMAL);
@@ -1499,9 +1559,9 @@ fn main() -> Result<(), LayoutError> {
     table.add_row(vec!["Task 1".into(), "Done".into()]);
     grid[1][0].add_widget(table)?;
 
-    // Bottom-right: Box with content
-    let box_widget = Box::new().with_title("Notes");
-    grid[1][1].add_widget(box_widget)?;
+    // Bottom-right: Rect with content
+    let rect_widget = Rect::new().with_title("Notes");
+    grid[1][1].add_widget(rect_widget)?;
 
     // Finalize
     page.finalize()?;
@@ -1678,6 +1738,7 @@ let document = doc.build(); // ✅ Now OK
 **Contract**: Rendered output follows ESC/P specification.
 
 **Guaranteed commands**:
+
 - `ESC @` (0x1B 0x40): Reset printer
 - `SI` (0x0F): Condensed mode (12 CPI)
 - `ESC E` / `ESC F`: Bold on/off
@@ -1693,34 +1754,34 @@ let document = doc.build(); // ✅ Now OK
 
 ### 10.1 Time Complexity
 
-| Operation | Complexity | Notes |
-|-----------|------------|-------|
-| `DocumentBuilder::new()` | O(1) | |
-| `add_page()` | O(1) | Allocates 16 KB |
-| `Page::write_cell()` | O(1) | Inline, very fast |
-| `Page::write_text()` | O(n) | n = text length |
-| `Region::split_horizontal()` | O(m) | m = number of splits |
-| `Region::split_vertical()` | O(m) | m = number of splits |
-| `Region::grid()` | O(r × c) | r = rows, c = cols |
-| `Document::render()` | O(p × 8,160) | p = page count |
-| `Widget::render()` | Varies | Widget-dependent |
+| Operation                    | Complexity   | Notes                |
+| ---------------------------- | ------------ | -------------------- |
+| `DocumentBuilder::new()`     | O(1)         |                      |
+| `add_page()`                 | O(1)         | Allocates 16 KB      |
+| `Page::write_cell()`         | O(1)         | Inline, very fast    |
+| `Page::write_text()`         | O(n)         | n = text length      |
+| `Region::split_horizontal()` | O(m)         | m = number of splits |
+| `Region::split_vertical()`   | O(m)         | m = number of splits |
+| `Region::grid()`             | O(r × c)     | r = rows, c = cols   |
+| `Document::render()`         | O(p × 8,160) | p = page count       |
+| `Widget::render()`           | Varies       | Widget-dependent     |
 
 ### 10.2 Space Complexity
 
-| Structure | Size | Notes |
-|-----------|------|-------|
-| `Cell` | 2 bytes | Character + style |
-| `Page` | ~16 KB | 160 × 51 × 2 bytes |
-| `Document` (100 pages) | ~1.6 MB | 100 × 16 KB |
-| `Region` (tree node) | ~48 bytes | Vec overhead + fields |
+| Structure              | Size      | Notes                 |
+| ---------------------- | --------- | --------------------- |
+| `Cell`                 | 2 bytes   | Character + style     |
+| `Page`                 | ~16 KB    | 160 × 51 × 2 bytes    |
+| `Document` (100 pages) | ~1.6 MB   | 100 × 16 KB           |
+| `Region` (tree node)   | ~48 bytes | Vec overhead + fields |
 
 ### 10.3 Benchmark Targets
 
-| Operation | Target (p99) | Measurement |
-|-----------|--------------|-------------|
-| `Page::new()` | < 10 μs | `criterion` |
-| Single page render | < 100 μs | `criterion` |
-| 100-page render | < 10 ms | `criterion` |
+| Operation          | Target (p99) | Measurement |
+| ------------------ | ------------ | ----------- |
+| `Page::new()`      | < 10 μs      | `criterion` |
+| Single page render | < 100 μs     | `criterion` |
+| 100-page render    | < 10 ms      | `criterion` |
 
 ### 10.4 Optimization Tips
 
@@ -1768,11 +1829,13 @@ This library follows [SemVer 2.0.0](https://semver.org/).
 ### 11.2 Deprecation Policy
 
 Deprecated APIs will:
+
 1. Emit warnings for ≥ 1 minor version before removal
 2. Be documented in CHANGELOG.md
 3. Provide migration path in deprecation message
 
 **Example**:
+
 ```rust
 #[deprecated(since = "1.2.0", note = "Use `split_horizontal_equal()` instead")]
 pub fn split_equal(&mut self, count: u16) -> Result<...> {
@@ -1783,11 +1846,13 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> {
 ### 11.3 API Stability Guarantees
 
 **V1.x.x Series**:
+
 - Public API frozen except for additions
 - ESC/P output format remains stable (byte-compatible)
 - No breaking changes within 1.x.x
 
 **V2.0.0 (Future)**:
+
 - May introduce breaking changes
 - Migration guide provided
 - Automated migration tools where possible
@@ -1808,33 +1873,39 @@ use epson_lq2090_layout::widgets::*;
 #### Common Patterns
 
 **Create Document**:
+
 ```rust
 let mut doc = DocumentBuilder::new();
 ```
 
 **Add Page**:
+
 ```rust
 let mut page = doc.add_page();
 let mut root = page.root_region();
 ```
 
 **Write Text**:
+
 ```rust
 root.write_text(0, 0, "Text", Style::BOLD);
 ```
 
 **Split Region**:
+
 ```rust
 let mut sections = root.split_vertical(&[1, 3, 1])?;
 ```
 
 **Add Widget**:
+
 ```rust
 let table = Table::new(vec![30, 30]);
 region.add_widget(table)?;
 ```
 
 **Render**:
+
 ```rust
 page.finalize()?;
 let doc = doc.build();
@@ -1876,17 +1947,17 @@ page.finalize()?;
 
 ### 12.3 ESC/P Byte Sequences
 
-| Operation | Sequence | Hex |
-|-----------|----------|-----|
-| Reset | ESC @ | 1B 40 |
-| Condensed mode | SI | 0F |
-| Bold ON | ESC E | 1B 45 |
-| Bold OFF | ESC F | 1B 46 |
-| Underline ON | ESC - 1 | 1B 2D 01 |
-| Underline OFF | ESC - 0 | 1B 2D 00 |
-| Carriage return | CR | 0D |
-| Line feed | LF | 0A |
-| Form feed | FF | 0C |
+| Operation       | Sequence | Hex      |
+| --------------- | -------- | -------- |
+| Reset           | ESC @    | 1B 40    |
+| Condensed mode  | SI       | 0F       |
+| Bold ON         | ESC E    | 1B 45    |
+| Bold OFF        | ESC F    | 1B 46    |
+| Underline ON    | ESC - 1  | 1B 2D 01 |
+| Underline OFF   | ESC - 0  | 1B 2D 00 |
+| Carriage return | CR       | 0D       |
+| Line feed       | LF       | 0A       |
+| Form feed       | FF       | 0C       |
 
 ---
 
@@ -1917,6 +1988,7 @@ A: Enable the `serde` feature.
 **Document Status**: ✅ Ready for Developer Use
 
 **Next Steps**:
+
 1. Review API with developers
 2. Implement public API surface
 3. Generate rustdoc documentation

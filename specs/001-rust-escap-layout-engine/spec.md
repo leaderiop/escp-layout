@@ -5,13 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Build a Rust library that implements a fully deterministic text-based layout engine for the Epson LQ-2090II dot-matrix printer using ESC/P condensed text mode. The engine must render content onto a fixed 160×51 character page matrix, enforcing strict boundaries and silent truncation rules. Layout is based on rectangular Regions that can be nested, padded, or split both horizontally and vertically. Regions never resize automatically, and overflowing content is always truncated without generating new pages.
 
-The library must support composing Documents made of multiple manually created Pages. Each Page contains a 160×51 grid of Cells storing ASCII characters and simple text styles like bold and underline. A set of static widgets—such as labels, text blocks, paragraphs with wrapping, ASCII boxes, key-value lists, and fixed-column tables—must be renderable inside Regions while respecting truncation and region boundaries.
+The library must support composing Documents made of multiple manually created Pages. Each Page contains a 160×51 grid of Cells storing ASCII characters and simple text styles like bold and underline. A set of static widgets—such as labels, text blocks, paragraphs with wrapping, ASCII rectes, key-value lists, and fixed-column tables—must be renderable inside Regions while respecting truncation and region boundaries.
 
 Output must be a valid ESC/P byte stream including correct initialization, condensed-mode activation, style state transitions, per-line rendering, and form-feed separation between pages. The internal rendering must never enter bitmap or graphic modes, never wrap content across regions, and never auto-paginate. The library must expose a clean builder-style API that ensures immutability of finalized Pages and Documents, and guarantees deterministic byte-for-byte output for identical inputs.
 
 The system must prioritize predictability, immutability, ESC/P compatibility, layout correctness, and developer ergonomics. All behavior must adhere strictly to the frozen V1 specification for fixed layout, strict truncation, and manual pagination."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Render Single-Page Invoice (Priority: P1)
 
@@ -100,7 +100,7 @@ A developer needs to emphasize certain text using bold and underline styles. The
 
 ### User Story 6 - Use Pre-Built Widgets for Common Content (Priority: P3)
 
-A developer uses widget types like labels, paragraphs with word wrapping, ASCII boxes, key-value lists, and fixed-column tables to quickly compose page content without manually managing character positioning or wrapping logic.
+A developer uses widget types like labels, paragraphs with word wrapping, ASCII rectes, key-value lists, and fixed-column tables to quickly compose page content without manually managing character positioning or wrapping logic.
 
 **Why this priority**: Widgets improve developer ergonomics significantly but are built on top of basic rendering. Can be implemented incrementally after core layout works.
 
@@ -109,7 +109,7 @@ A developer uses widget types like labels, paragraphs with word wrapping, ASCII 
 **Acceptance Scenarios**:
 
 1. **Given** a paragraph widget with text exceeding region width, **When** rendered, **Then** text wraps to next line at word boundaries
-2. **Given** an ASCII box widget with title and content, **When** rendered, **Then** output shows box border characters surrounding content
+2. **Given** an ASCII rect widget with title and content, **When** rendered, **Then** output shows rect border characters surrounding content
 3. **Given** a key-value list widget with 5 entries, **When** rendered, **Then** each entry appears on a separate line with consistent key-value spacing
 4. **Given** a fixed-column table widget with 3 columns and 10 rows, **When** rendered in a region with 7 lines, **Then** only first 7 rows appear (including header)
 
@@ -125,7 +125,7 @@ A developer uses widget types like labels, paragraphs with word wrapping, ASCII 
 - What happens when a document contains zero pages? (Expected: render produces empty byte stream or minimal initialization sequence, no form-feeds)
 - What happens when the same page is added to multiple documents? (Expected: page renders identically in each document context)
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -137,7 +137,7 @@ A developer uses widget types like labels, paragraphs with word wrapping, ASCII 
 - **FR-006**: Library MUST support adding padding to Regions (reducing usable space by specified amounts on each edge)
 - **FR-007**: Library MUST support nesting Regions to arbitrary depth while respecting ancestor boundaries
 - **FR-008**: Library MUST enforce that content placed in a Region never exceeds Region boundaries (silent truncation)
-- **FR-009**: Library MUST provide widget types: Label, TextBlock, Paragraph, ASCIIBox, KeyValueList, Table
+- **FR-009**: Library MUST provide widget types: Label, TextBlock, Paragraph, ASCIIRect, KeyValueList, Table
 - **FR-010**: Paragraph widget MUST wrap text at word boundaries when content exceeds region width
 - **FR-011**: Table widget MUST support fixed-column layouts with configurable column widths
 - **FR-012**: All widgets MUST respect region boundaries and truncate content when region is full
@@ -165,15 +165,15 @@ A developer uses widget types like labels, paragraphs with word wrapping, ASCII 
 
 - **Region**: Represents a rectangular area within a Page defined by column range and row range. Used for layout composition. Can be split into child regions or have padding applied. Attributes: column start/end, row start/end, parent region reference.
 
-- **Widget**: Abstract concept representing renderable content types. Each widget type knows how to render itself into a Region. Concrete types: Label (single-line text), TextBlock (multi-line text without wrapping), Paragraph (multi-line with word wrap), ASCIIBox (bordered content), KeyValueList (aligned key-value pairs), Table (fixed-column tabular data).
+- **Widget**: Abstract concept representing renderable content types. Each widget type knows how to render itself into a Region. Concrete types: Label (single-line text), TextBlock (multi-line text without wrapping), Paragraph (multi-line with word wrap), ASCIIRect (bordered content), KeyValueList (aligned key-value pairs), Table (fixed-column tabular data).
 
 - **ESC/P Byte Stream**: Output representation consisting of ESC/P command sequences and printable ASCII characters. Contains initialization codes, style state transitions, line content, and page separators. Attributes: byte sequence, deterministic generation guarantee.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: Developer can create a single-page document with mixed content (text, table, box) and render to valid ESC/P output in under 10 lines of client code
+- **SC-001**: Developer can create a single-page document with mixed content (text, table, rect) and render to valid ESC/P output in under 10 lines of client code
 - **SC-002**: Identical document content produces identical byte stream output across 1000 consecutive renders (determinism verification)
 - **SC-003**: Content overflowing region boundaries is silently truncated without errors or warnings in 100% of test cases
 - **SC-004**: Multi-page documents with 100 pages render successfully with correct page separation (99 form-feeds)

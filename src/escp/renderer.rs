@@ -7,32 +7,37 @@ use crate::{Cell, Document, Page};
 /// Renders a complete document to an ESC/P byte stream.
 ///
 /// Output format:
-/// 1. ESC_RESET + SI_CONDENSED (initialization)
+/// 1. ESC_RESET + SI_CONDENSED + ESC_PAGE_LENGTH_50 (initialization)
 /// 2. Page content (one page at a time)
-/// 3. Form-feed after each page
+/// 3. CR + FF after each page (no reset between pages)
 pub(crate) fn render_document(doc: &Document) -> Vec<u8> {
     let mut output = Vec::new();
 
     // Initialization sequence
-    output.extend_from_slice(ESC_RESET);
-    output.extend_from_slice(SI_CONDENSED);
+    output.extend_from_slice(ESC_RESET);           // ESC @ - Reset printer
+    output.extend_from_slice(SI_CONDENSED);        // SI - Condensed mode
+    output.extend_from_slice(ESC_PAGE_LENGTH_50);  // ESC C 50 - Set 50-line pages
 
     // Render each page
     for page in doc.pages() {
         render_page(page, &mut output);
-        // Form-feed after each page
-        output.push(FF);
+        // Form feed to next page (no CR needed - last line already has CR+LF)
+        output.push(FF);  // Form feed to next page
     }
 
     output
 }
 
 /// Renders a single page to the output buffer.
+///
+/// EPSON LQ-2090II Configuration:
+/// - Renders 50 lines (lines 0-49)
+/// - Line 50 is reserved by printer (margin/boundary)
 fn render_page(page: &Page, output: &mut Vec<u8>) {
     let mut state = RenderState::new();
 
-    // Render all 51 lines
-    for y in 0..51 {
+    // Render 50 lines (0-49), skip line 50 (reserved)
+    for y in 0..50 {
         render_line(&page.cells()[y as usize], &mut state, output);
 
         // Line termination

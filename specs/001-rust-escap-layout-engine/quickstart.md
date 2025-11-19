@@ -62,16 +62,19 @@ fn main() {
 ```
 
 **Run**:
+
 ```bash
 cargo run
 ```
 
 **Output**:
+
 ```
 Rendered 8266 bytes to output.prn
 ```
 
 **Send to printer** (Linux/macOS):
+
 ```bash
 cat output.prn > /dev/usb/lp0  # Or your printer device
 ```
@@ -122,6 +125,7 @@ let (top, bottom) = body.split_vertical(20)?;    // 20 lines top, 26 bottom
 ### Writing Text
 
 **Direct writes**:
+
 ```rust
 page.write_at(x, y, 'A', StyleFlags::BOLD);      // Single character
 page.write_str(x, y, "Hello", StyleFlags::NONE); // String
@@ -180,10 +184,11 @@ let page = Page::builder()
 ```
 
 **Available widgets**:
+
 - `Label`: Single-line text
 - `TextBlock`: Multi-line text (no wrapping)
 - `Paragraph`: Multi-line text with word wrapping
-- `ASCIIBox`: Bordered box with optional title
+- `ASCIIRect`: Bordered rect with optional title
 - `KeyValueList`: Aligned key-value pairs
 - `Table`: Fixed-column tables
 
@@ -278,21 +283,22 @@ page.render_widget(region, &para);
 
 ---
 
-### ASCIIBox
+### ASCIIRect
 
 ```rust
-let content = Label::new("Inside the box");
+let content = Label::new("Inside the rect");
 
-let boxed = ASCIIBox::new(Box::new(content))
+let rected = ASCIIRect::new(Rect::new(content))
     .with_title("Section Title");
 
-page.render_widget(region, &boxed);
+page.render_widget(region, &rected);
 ```
 
 **Output**:
+
 ```
 +--Section Title-------+
-|Inside the box       |
+|Inside the rect       |
 |                     |
 +---------------------+
 ```
@@ -312,6 +318,7 @@ page.render_widget(region, &kv_list);
 ```
 
 **Output**:
+
 ```
 Name: John Doe
 ID: 12345
@@ -339,6 +346,7 @@ page.render_widget(region, &table);
 ```
 
 **Output**:
+
 ```
 Product                                  Quantity       Price
 Widget A                                 5              $50.00
@@ -364,6 +372,7 @@ match Region::new(200, 0, 10, 10) {
 ```
 
 **Common errors**:
+
 - `RegionOutOfBounds`: Coordinates exceed 160×51
 - `InvalidDimensions`: Width/height calculation underflow
 - `InvalidSplit`: Split dimensions exceed parent
@@ -377,7 +386,7 @@ match Region::new(200, 0, 10, 10) {
 ```rust
 use escp_layout::*;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Rect<dyn std::error::Error>> {
     let full_page = Region::full_page();
 
     // Layout regions
@@ -493,11 +502,13 @@ printer.write_all(&bytes)?;
 ### Pitfall 1: Forgetting `?` on Region creation
 
 **❌ Wrong**:
+
 ```rust
 let region = Region::new(0, 0, 200, 60);  // Compile error: Result not handled
 ```
 
 **✅ Correct**:
+
 ```rust
 let region = Region::new(0, 0, 200, 60)?;  // Returns error if out of bounds
 ```
@@ -507,12 +518,14 @@ let region = Region::new(0, 0, 200, 60)?;  // Returns error if out of bounds
 ### Pitfall 2: Expecting errors on overflow
 
 **❌ Wrong assumption**:
+
 ```rust
 // This does NOT return an error - it silently truncates
 page.write_str(150, 0, "This text is too long...", StyleFlags::NONE);
 ```
 
 **✅ Correct understanding**:
+
 - Overflow is **not an error** (by design)
 - Text exceeding region boundaries is silently truncated
 - This is intentional for predictable behavior
@@ -522,12 +535,14 @@ page.write_str(150, 0, "This text is too long...", StyleFlags::NONE);
 ### Pitfall 3: Modifying after finalization
 
 **❌ Wrong (won't compile)**:
+
 ```rust
 let page = Page::builder().build();
 page.write_at(0, 0, 'A', StyleFlags::NONE);  // Error: page is immutable
 ```
 
 **✅ Correct**:
+
 ```rust
 let page = Page::builder()
     .write_at(0, 0, 'A', StyleFlags::NONE)  // Write before build()
@@ -552,6 +567,7 @@ let page = Page::builder()
 **Cause**: Coordinates exceed 160×51 page size
 
 **Solution**: Check region calculations:
+
 ```rust
 // Debug print region
 println!("Region: x={}, y={}, width={}, height={}", r.x, r.y, r.width, r.height);
@@ -566,11 +582,13 @@ assert!(r.y + r.height <= 51);
 ### Problem: Text not appearing
 
 **Possible causes**:
+
 1. Text written outside region bounds (silently truncated)
 2. Text color same as background (use styles to debug)
 3. Empty cells being rendered as spaces
 
 **Debug**:
+
 ```rust
 // Check if cell was written
 let cell = page.get_cell(x, y).unwrap();
@@ -583,6 +601,7 @@ println!("Cell at ({}, {}): char={}, bold={}",
 ### Problem: Printer not responding
 
 **Checklist**:
+
 1. Verify printer is on and online
 2. Check cable connection
 3. Verify condensed mode is supported (LQ-2090II required)
@@ -604,6 +623,7 @@ println!("Cell at ({}, {}): char={}, bold={}",
 ## Support
 
 For issues, questions, or feature requests:
+
 - **GitHub**: (Repository URL placeholder)
 - **Email**: (Contact placeholder)
 

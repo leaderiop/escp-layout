@@ -1,6 +1,6 @@
 //! Property-based tests to ensure no panics on arbitrary input (User Story 2)
 
-use escp_layout::{Document, Page, Region, StyleFlags};
+use escp_layout::{Document, Page, StyleFlags};
 use proptest::prelude::*;
 
 // Strategy to generate arbitrary text
@@ -62,125 +62,6 @@ proptest! {
 
         let bytes = document.render();
         prop_assert!(!!!bytes.is_empty());
-    }
-}
-
-proptest! {
-    #[test]
-    fn test_region_new_never_panics(
-        x in 0u16..300u16,
-        y in 0u16..150u16,
-        width in 0u16..300u16,
-        height in 0u16..150u16,
-    ) {
-        // Region::new returns Result, should never panic
-        let result = Region::new(x, y, width, height);
-
-        // Valid or error, but no panic
-        match result {
-            Ok(region) => {
-                // Valid region should be within bounds
-                prop_assert!(region.x() + region.width() <= 160);
-                prop_assert!(region.y() + region.height() <= 51);
-                prop_assert!(region.width() > 0);
-                prop_assert!(region.height() > 0);
-            }
-            Err(_) => {
-                // Invalid region - this is expected for many inputs
-            }
-        }
-    }
-}
-
-proptest! {
-    #[test]
-    fn test_fill_region_never_panics(
-        x in 0u16..160u16,
-        y in 0u16..51u16,
-        width in 1u16..50u16,
-        height in 1u16..20u16,
-        ch in 32u8..=126u8,
-    ) {
-        // Create region that might partially or fully fit
-        if let Ok(region) = Region::new(x, y, width, height) {
-            let mut page_builder = Page::builder();
-
-            // Should never panic even if region extends beyond page
-            page_builder.fill_region(region, ch as char, StyleFlags::NONE);
-
-            let page = page_builder.build();
-            let mut doc_builder = Document::builder();
-            doc_builder.add_page(page);
-            let document = doc_builder.build();
-
-            let bytes = document.render();
-            prop_assert!(!!!bytes.is_empty());
-        }
-    }
-}
-
-proptest! {
-    #[test]
-    fn test_region_split_never_panics(
-        width in 2u16..100u16,
-        height in 2u16..51u16,
-        split_at in 1u16..100u16,
-    ) {
-        if let Ok(region) = Region::new(0, 0, width, height) {
-            // Try vertical split
-            let v_result = region.split_vertical(split_at);
-            // Should return Ok or Err, never panic
-            match v_result {
-                Ok((top, bottom)) => {
-                    prop_assert_eq!(top.height() + bottom.height(), region.height());
-                }
-                Err(_) => {
-                    // Invalid split - expected
-                }
-            }
-
-            // Try horizontal split
-            let h_result = region.split_horizontal(split_at);
-            match h_result {
-                Ok((left, right)) => {
-                    prop_assert_eq!(left.width() + right.width(), region.width());
-                }
-                Err(_) => {
-                    // Invalid split - expected
-                }
-            }
-        }
-    }
-}
-
-proptest! {
-    #[test]
-    fn test_with_padding_never_panics(
-        width in 10u16..100u16,
-        height in 10u16..51u16,
-        top in 0u16..20u16,
-        bottom in 0u16..20u16,
-        left in 0u16..30u16,
-        right in 0u16..30u16,
-    ) {
-        if let Ok(region) = Region::new(0, 0, width, height) {
-            // Try to apply padding (might be excessive)
-            let result = region.with_padding(top, bottom, left, right);
-
-            // Should return Ok or Err, never panic
-            match result {
-                Ok(padded) => {
-                    // Valid padding
-                    prop_assert!(padded.width() > 0);
-                    prop_assert!(padded.height() > 0);
-                    prop_assert!(padded.width() <= region.width());
-                    prop_assert!(padded.height() <= region.height());
-                }
-                Err(_) => {
-                    // Excessive padding - expected
-                }
-            }
-        }
     }
 }
 

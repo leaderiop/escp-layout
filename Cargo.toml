@@ -2,7 +2,7 @@
 name = "escp-layout"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.91.1"
 authors = ["Mohammad AlMechkor"]
 license = "MIT OR Apache-2.0"
 description = "Deterministic text-based layout engine for EPSON LQ-2090II dot-matrix printer using ESC/P condensed mode"
@@ -37,10 +37,6 @@ strip = true
 name = "render_bench"
 harness = false
 
-[[bench]]
-name = "widget_bench"
-harness = false
-
 [[test]]
 name = "integration"
 path = "tests/integration/single_page_tests.rs"
@@ -52,10 +48,6 @@ path = "tests/integration/overflow_tests.rs"
 [[test]]
 name = "integration_multi_page"
 path = "tests/integration/multi_page_tests.rs"
-
-[[test]]
-name = "integration_nested_regions"
-path = "tests/integration/nested_region_tests.rs"
 
 [[test]]
 name = "integration_styles"

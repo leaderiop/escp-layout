@@ -1,6 +1,6 @@
 //! Integration tests for single-page rendering (User Story 1)
 
-use escp_layout::{Document, Page, Region, StyleFlags};
+use escp_layout::{Document, Page, StyleFlags};
 
 #[test]
 fn test_single_page_invoice_rendering() {
@@ -9,9 +9,9 @@ fn test_single_page_invoice_rendering() {
 
     page_builder.write_str(0, 0, "INVOICE #12345", StyleFlags::BOLD);
 
-    // Add separator line
-    let separator = Region::new(0, 1, 80, 1).unwrap();
-    page_builder.fill_region(separator, '-', StyleFlags::NONE);
+    // Add separator line manually
+    let separator = "-".repeat(80);
+    page_builder.write_str(0, 1, &separator, StyleFlags::NONE);
 
     // Add footer text
     page_builder.write_str(0, 3, "Thank you for your business!", StyleFlags::NONE);
@@ -85,14 +85,11 @@ fn test_page_with_styles() {
 }
 
 #[test]
-fn test_deterministic_rendering_with_regions() {
+fn test_deterministic_rendering() {
     let mut page_builder = Page::builder();
 
-    let full_page = Region::full_page();
-    let (header, body) = full_page.split_vertical(5).unwrap();
-
-    page_builder.write_str(header.x(), header.y(), "Header", StyleFlags::BOLD);
-    page_builder.write_str(body.x(), body.y(), "Body content", StyleFlags::NONE);
+    page_builder.write_str(0, 0, "Header", StyleFlags::BOLD);
+    page_builder.write_str(0, 5, "Body content", StyleFlags::NONE);
 
     let page = page_builder.build();
     let mut doc_builder = Document::builder();

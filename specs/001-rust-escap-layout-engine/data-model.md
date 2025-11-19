@@ -15,10 +15,12 @@ This document defines the complete data model for the Rust ESC/P layout engine l
 **Purpose**: Represents a single character position within a page grid.
 
 **Attributes**:
+
 - `character: u8` - ASCII character value (32-126), 0 represents empty cell
 - `style: StyleFlags` - Bit-packed style flags (bold, underline)
 
 **Validation Rules**:
+
 - Character MUST be ASCII (0-127)
 - Non-ASCII characters (128-255) MUST be replaced with '?' (63) before storage
 - Control characters (0-31 except 0) MUST be rejected or replaced
@@ -28,6 +30,7 @@ This document defines the complete data model for the Rust ESC/P layout engine l
 **Relationships**: Owned by Page in 160×51 grid
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
@@ -58,26 +61,31 @@ impl Cell {
 **Purpose**: Bit-packed text style information.
 
 **Attributes**:
+
 - `flags: u8` - Bit field storing style flags
 
 **Flags**:
+
 - Bit 0: Bold (0x01)
 - Bit 1: Underline (0x02)
 - Bits 2-7: Reserved for future styles
 
 **Validation Rules**:
+
 - Only defined bits may be set
 - Invalid flag combinations are not possible (all combinations of bold/underline are valid)
 
 **State**: Immutable value type (Copy + Clone)
 
 **Operations**:
+
 - `bold() -> bool` - Test if bold is set
 - `underline() -> bool` - Test if underline is set
 - `with_bold(bool) -> StyleFlags` - Create new flags with bold set/unset
 - `with_underline(bool) -> StyleFlags` - Create new flags with underline set/unset
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct StyleFlags(u8);
@@ -115,12 +123,14 @@ impl StyleFlags {
 **Purpose**: Represents a rectangular view into a page grid.
 
 **Attributes**:
+
 - `x: u16` - Column start position (0-159)
 - `y: u16` - Row start position (0-50)
 - `width: u16` - Column count
 - `height: u16` - Row count
 
 **Validation Rules**:
+
 - `x + width <= 160` (PAGE_WIDTH)
 - `y + height <= 51` (PAGE_HEIGHT)
 - Width and height MAY be zero (creates empty region)
@@ -129,6 +139,7 @@ impl StyleFlags {
 **State**: Immutable value type (Copy + Clone)
 
 **Operations**:
+
 - `new(x, y, width, height) -> Result<Region, LayoutError>` - Create with validation
 - `full_page() -> Region` - Create region covering entire page
 - `split_vertical(top_height) -> Result<(Region, Region), LayoutError>` - Split into top/bottom
@@ -140,6 +151,7 @@ impl StyleFlags {
 **Relationships**: Used by PageBuilder and Widgets, does not own data
 
 **Implementation**:
+
 ```rust
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Region {
@@ -200,16 +212,19 @@ impl Region {
 **Purpose**: Immutable 160×51 character grid representing a single printed page.
 
 **Attributes**:
-- `cells: Box<[[Cell; 160]; 51]>` - Row-major cell grid
+
+- `cells: Rect<[[Cell; 160]; 51]>` - Row-major cell grid
 - `finalized: bool` - Finalization state (internal use)
 
 **Validation Rules**:
+
 - Always exactly 160×51 cells (compile-time guarantee via array type)
 - Cannot be modified after creation (no public mutable methods)
 
 **State**: Immutable after construction
 
 **State Transitions**:
+
 ```
 PageBuilder (Building)
     -> .build()
@@ -217,18 +232,21 @@ PageBuilder (Building)
 ```
 
 **Operations**:
+
 - `builder() -> PageBuilder` - Create new page builder
 - `get_cell(x, y) -> Option<Cell>` - Read cell at position (returns None if out of bounds)
 - `cells() -> &[[Cell; 160]; 51]` - Read-only access to entire grid
 
 **Relationships**:
+
 - Owned by Document
 - Created by PageBuilder
 
 **Implementation**:
+
 ```rust
 pub struct Page {
-    cells: Box<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
+    cells: Rect<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
 }
 
 impl Page {
@@ -257,16 +275,19 @@ impl Page {
 **Purpose**: Mutable builder for constructing Page.
 
 **Attributes**:
-- `cells: Box<[[Cell; 160]; 51]>` - Mutable cell grid under construction
+
+- `cells: Rect<[[Cell; 160]; 51]>` - Mutable cell grid under construction
 - `_state: PhantomData<State>` - Type state marker (Building vs Finalized)
 
 **Validation Rules**:
+
 - Write operations silently truncate out-of-bounds coordinates (no panic)
 - Multiple writes to same cell are allowed (last write wins)
 
 **State**: Mutable during construction, consumed on build
 
 **State Transitions**:
+
 ```
 new() -> PageBuilder<Building>
     -> write operations
@@ -274,6 +295,7 @@ new() -> PageBuilder<Building>
 ```
 
 **Operations**:
+
 - `new() -> PageBuilder` - Create builder with empty cells
 - `write_at(x, y, ch, style) -> &mut Self` - Write single cell (truncates if out of bounds)
 - `write_str(x, y, text, style) -> &mut Self` - Write string starting at position
@@ -282,19 +304,21 @@ new() -> PageBuilder<Building>
 - `build(self) -> Page` - Finalize and create immutable Page
 
 **Relationships**:
+
 - Creates Page
 - Used by Widget implementations
 
 **Implementation**:
+
 ```rust
 pub struct PageBuilder {
-    cells: Box<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
+    cells: Rect<[[Cell; PAGE_WIDTH]; PAGE_HEIGHT]>,
 }
 
 impl PageBuilder {
     pub fn new() -> Self {
         PageBuilder {
-            cells: Box::new([[Cell::EMPTY; PAGE_WIDTH]; PAGE_HEIGHT]),
+            cells: Rect::new([[Cell::EMPTY; PAGE_WIDTH]; PAGE_HEIGHT]),
         }
     }
 
@@ -340,9 +364,11 @@ impl PageBuilder {
 **Purpose**: Immutable collection of Pages representing a multi-page output.
 
 **Attributes**:
+
 - `pages: Vec<Page>` - Ordered list of pages
 
 **Validation Rules**:
+
 - May contain zero or more pages (zero pages is valid)
 - Pages are ordered (order matters for rendering)
 - Cannot be modified after creation
@@ -350,6 +376,7 @@ impl PageBuilder {
 **State**: Immutable after construction
 
 **State Transitions**:
+
 ```
 DocumentBuilder (Building)
     -> .add_page() (multiple times)
@@ -358,16 +385,19 @@ DocumentBuilder (Building)
 ```
 
 **Operations**:
+
 - `builder() -> DocumentBuilder` - Create new document builder
 - `pages() -> &[Page]` - Read-only access to pages
 - `page_count() -> usize` - Get number of pages
 - `render() -> Vec<u8>` - Render document to ESC/P byte stream
 
 **Relationships**:
+
 - Owns multiple Page instances
 - Created by DocumentBuilder
 
 **Implementation**:
+
 ```rust
 pub struct Document {
     pages: Vec<Page>,
@@ -399,10 +429,12 @@ impl Document {
 **Purpose**: Mutable builder for constructing Document.
 
 **Attributes**:
+
 - `pages: Vec<Page>` - List of pages being accumulated
 - `_state: PhantomData<State>` - Type state marker
 
 **Validation Rules**:
+
 - Pages must be finalized before adding (enforced by type system)
 - Duplicate pages are allowed
 - Pages may be added in any order
@@ -410,6 +442,7 @@ impl Document {
 **State**: Mutable during construction, consumed on build
 
 **State Transitions**:
+
 ```
 new() -> DocumentBuilder<Building>
     -> add_page() (multiple times)
@@ -417,15 +450,18 @@ new() -> DocumentBuilder<Building>
 ```
 
 **Operations**:
+
 - `new() -> DocumentBuilder` - Create empty builder
 - `add_page(page: Page) -> &mut Self` - Add finalized page
 - `build(self) -> Document` - Finalize and create immutable Document
 
 **Relationships**:
+
 - Creates Document
 - Accepts Page instances
 
 **Implementation**:
+
 ```rust
 pub struct DocumentBuilder {
     pages: Vec<Page>,
@@ -456,17 +492,20 @@ impl DocumentBuilder {
 **Purpose**: Common interface for renderable content types.
 
 **Operations**:
+
 - `render(&self, page: &mut PageBuilder, region: Region)` - Render widget into region
 
-**Implementations**: Label, TextBlock, Paragraph, ASCIIBox, KeyValueList, Table
+**Implementations**: Label, TextBlock, Paragraph, ASCIIRect, KeyValueList, Table
 
 **Contract**:
+
 - MUST respect region boundaries (no writes outside region)
 - MUST handle zero-width/zero-height regions gracefully (render nothing)
 - MUST truncate content that exceeds region size
 - MUST NOT panic under any inputs
 
 **Implementation**:
+
 ```rust
 pub trait Widget {
     fn render(&self, page: &mut PageBuilder, region: Region);
@@ -480,15 +519,18 @@ pub trait Widget {
 **Purpose**: Single-line text widget.
 
 **Attributes**:
+
 - `text: String` - Text content
 - `style: StyleFlags` - Text style
 
 **Rendering Rules**:
+
 - Renders on first line of region only
 - Truncates if text exceeds region width
 - Ignores region height (only uses first line)
 
 **Implementation**:
+
 ```rust
 pub struct Label {
     text: String,
@@ -527,15 +569,18 @@ impl Widget for Label {
 **Purpose**: Multi-line text widget without word wrapping.
 
 **Attributes**:
+
 - `lines: Vec<String>` - Pre-split text lines
 
 **Rendering Rules**:
+
 - Each string renders on one line
 - Lines that exceed width are truncated
 - Lines that exceed height are dropped
 - No word wrapping performed
 
 **Implementation**:
+
 ```rust
 pub struct TextBlock {
     lines: Vec<String>,
@@ -581,16 +626,19 @@ impl Widget for TextBlock {
 **Purpose**: Multi-line text with word wrapping.
 
 **Attributes**:
+
 - `text: String` - Original text
 - `style: StyleFlags` - Text style
 
 **Rendering Rules**:
+
 - Wraps at word boundaries when line width exceeded
 - Breaks words if single word exceeds width
 - Truncates lines that exceed region height
 - Preserves spaces between words
 
 **Implementation**:
+
 ```rust
 pub struct Paragraph {
     text: String,
@@ -638,35 +686,39 @@ fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
 
 ---
 
-### ASCIIBox
+### ASCIIRect
 
-**Purpose**: Bordered box with optional title and content.
+**Purpose**: Bordered rect with optional title and content.
 
 **Attributes**:
+
 - `title: Option<String>` - Optional title text
-- `content: Box<dyn Widget>` - Widget rendered inside box
+- `content: Rect<dyn Widget>` - Widget rendered inside rect
 
 **Rendering Rules**:
-- Border uses ASCII box-drawing characters (+-|)
+
+- Border uses ASCII rect-drawing characters (+-|)
 - Title rendered in top border if present
 - Content rendered in inset region (1 cell padding)
 - Requires minimum 3×3 region to be visible
 
 **Border Characters**:
+
 - Corners: `+`
 - Horizontal: `-`
 - Vertical: `|`
 
 **Implementation**:
+
 ```rust
-pub struct ASCIIBox {
+pub struct ASCIIRect {
     title: Option<String>,
-    content: Box<dyn Widget>,
+    content: Rect<dyn Widget>,
 }
 
-impl ASCIIBox {
-    pub fn new(content: Box<dyn Widget>) -> Self {
-        ASCIIBox { title: None, content }
+impl ASCIIRect {
+    pub fn new(content: Rect<dyn Widget>) -> Self {
+        ASCIIRect { title: None, content }
     }
 
     pub fn with_title(mut self, title: impl Into<String>) -> Self {
@@ -675,10 +727,10 @@ impl ASCIIBox {
     }
 }
 
-impl Widget for ASCIIBox {
+impl Widget for ASCIIRect {
     fn render(&self, page: &mut PageBuilder, region: Region) {
         if region.width < 3 || region.height < 3 {
-            return; // Too small for box
+            return; // Too small for rect
         }
 
         // Draw corners
@@ -723,16 +775,19 @@ impl Widget for ASCIIBox {
 **Purpose**: Vertically aligned key-value pairs.
 
 **Attributes**:
+
 - `entries: Vec<(String, String)>` - Key-value pairs
 - `separator: String` - Separator between key and value (default ": ")
 
 **Rendering Rules**:
+
 - One entry per line
 - Keys and values separated by separator
 - Truncates entry if exceeds region width
 - Truncates entries if exceed region height
 
 **Implementation**:
+
 ```rust
 pub struct KeyValueList {
     entries: Vec<(String, String)>,
@@ -783,10 +838,12 @@ impl Widget for KeyValueList {
 **Purpose**: Fixed-column tabular data.
 
 **Attributes**:
+
 - `columns: Vec<ColumnDef>` - Column definitions (name, width)
 - `rows: Vec<Vec<String>>` - Row data (outer vec = rows, inner vec = cells)
 
 **Column Definition**:
+
 ```rust
 pub struct ColumnDef {
     pub name: String,
@@ -795,6 +852,7 @@ pub struct ColumnDef {
 ```
 
 **Rendering Rules**:
+
 - First line renders column headers
 - Subsequent lines render row data
 - Cells truncated to column width
@@ -802,6 +860,7 @@ pub struct ColumnDef {
 - Columns aligned left by default
 
 **Implementation**:
+
 ```rust
 pub struct Table {
     columns: Vec<ColumnDef>,
@@ -868,10 +927,12 @@ impl Widget for Table {
 **Purpose**: Tracks current style state during rendering to minimize ESC/P code emission.
 
 **Attributes**:
+
 - `bold: bool` - Current bold state
 - `underline: bool` - Current underline state
 
 **State Transitions**:
+
 ```
 Initial: { bold: false, underline: false }
     -> transition_to(StyleFlags) -> emits ESC/P codes for changes
@@ -879,11 +940,13 @@ Initial: { bold: false, underline: false }
 ```
 
 **Operations**:
+
 - `new() -> RenderState` - Create initial state
 - `transition_to(&mut self, target: StyleFlags, output: &mut Vec<u8>)` - Emit codes for style changes
 - `reset(&mut self, output: &mut Vec<u8>)` - Emit codes to clear all styles
 
 **Implementation** (internal, not public API):
+
 ```rust
 struct RenderState {
     bold: bool,
@@ -930,6 +993,7 @@ impl RenderState {
 **Purpose**: Represents recoverable errors during layout construction.
 
 **Variants**:
+
 - `RegionOutOfBounds` - Region coordinates exceed page bounds (160×51)
 - `InvalidDimensions` - Width or height is invalid (e.g., overflow in calculations)
 - `InvalidSplit` - Split dimensions exceed parent region
@@ -937,6 +1001,7 @@ impl RenderState {
 **Usage**: Returned from Region and builder validation methods
 
 **Implementation**:
+
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LayoutError {
@@ -974,7 +1039,7 @@ Document
   └── created by: DocumentBuilder
 
 Page
-  ├── cells: Box<[[Cell; 160]; 51]>
+  ├── cells: Rect<[[Cell; 160]; 51]>
   └── created by: PageBuilder
 
 Cell
@@ -989,7 +1054,7 @@ Widget (trait)
   ├── Label
   ├── TextBlock
   ├── Paragraph
-  ├── ASCIIBox
+  ├── ASCIIRect
   ├── KeyValueList
   └── Table
 
@@ -1011,25 +1076,25 @@ RenderState (internal)
 
 ## Validation Summary
 
-| Type | Validation Point | Invalid Input Handling |
-|------|------------------|------------------------|
-| Cell | Constructor | Non-ASCII → '?', control chars → empty |
-| Region | Constructor | Out of bounds → LayoutError |
-| Page | Build | None (grid size fixed at compile time) |
-| Document | Build | None (empty document valid) |
-| Widget | Render | Out of bounds → silent truncation |
+| Type     | Validation Point | Invalid Input Handling                 |
+| -------- | ---------------- | -------------------------------------- |
+| Cell     | Constructor      | Non-ASCII → '?', control chars → empty |
+| Region   | Constructor      | Out of bounds → LayoutError            |
+| Page     | Build            | None (grid size fixed at compile time) |
+| Document | Build            | None (empty document valid)            |
+| Widget   | Render           | Out of bounds → silent truncation      |
 
 ---
 
 ## Memory Layout Summary
 
-| Type | Size (approx) | Allocation |
-|------|---------------|------------|
-| Cell | 2 bytes | Inline in array |
-| StyleFlags | 1 byte | Inline |
-| Region | 8 bytes | Stack |
-| Page | ~16 KB | Heap (Box) |
-| Document | 8 bytes + pages | Heap (Vec) |
+| Type       | Size (approx)   | Allocation      |
+| ---------- | --------------- | --------------- |
+| Cell       | 2 bytes         | Inline in array |
+| StyleFlags | 1 byte          | Inline          |
+| Region     | 8 bytes         | Stack           |
+| Page       | ~16 KB          | Heap (Rect)     |
+| Document   | 8 bytes + pages | Heap (Vec)      |
 
 ---
 

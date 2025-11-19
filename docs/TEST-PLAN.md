@@ -8,15 +8,15 @@
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document Version** | 1.0 |
-| **Product Version** | V1.0 |
-| **Author** | Mohammad AlMechkor |
-| **Status** | Draft |
-| **Classification** | Internal - QA & Engineering |
-| **Date Created** | 2025-01-18 |
-| **Last Updated** | 2025-01-18 |
+| Field                | Value                       |
+| -------------------- | --------------------------- |
+| **Document Version** | 1.0                         |
+| **Product Version**  | V1.0                        |
+| **Author**           | Mohammad AlMechkor          |
+| **Status**           | Draft                       |
+| **Classification**   | Internal - QA & Engineering |
+| **Date Created**     | 2025-01-18                  |
+| **Last Updated**     | 2025-01-18                  |
 
 ### Related Documents
 
@@ -26,12 +26,12 @@
 
 ### Test Team
 
-| Role | Name | Responsibilities |
-|------|------|------------------|
-| **QA Lead** | [TBD] | Test strategy, approval |
-| **Test Engineer** | [TBD] | Test execution, reporting |
-| **Automation Engineer** | [TBD] | CI/CD integration |
-| **Hardware Tester** | [TBD] | Physical printer validation |
+| Role                    | Name  | Responsibilities            |
+| ----------------------- | ----- | --------------------------- |
+| **QA Lead**             | [TBD] | Test strategy, approval     |
+| **Test Engineer**       | [TBD] | Test execution, reporting   |
+| **Automation Engineer** | [TBD] | CI/CD integration           |
+| **Hardware Tester**     | [TBD] | Physical printer validation |
 
 ---
 
@@ -65,6 +65,7 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 ### 1.2 Scope
 
 **In Scope**:
+
 - Unit tests (≥90% coverage)
 - Integration tests (end-to-end workflows)
 - Property-based tests (determinism, truncation)
@@ -74,13 +75,14 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 - Security fuzzing
 
 **Out of Scope**:
+
 - Manual exploratory testing (covered separately)
 - Load testing (not applicable for V1)
 - UI testing (no UI)
 
 ### 1.3 Test Objectives
 
-1. **Correctness**: Verify all functional requirements (46 FR-*)
+1. **Correctness**: Verify all functional requirements (46 FR-\*)
 2. **Determinism**: Ensure 100% reproducible output
 3. **Safety**: Zero panics under any valid input
 4. **Performance**: Meet all NFR targets (< 100μs per page)
@@ -89,11 +91,13 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 ### 1.4 Test Metrics
 
 **Coverage Targets**:
+
 - Line coverage: ≥ 90%
 - Branch coverage: ≥ 85%
 - Public API coverage: 100%
 
 **Quality Gates**:
+
 - Zero critical bugs
 - Zero panics in fuzzing (1M+ iterations)
 - All hardware tests pass visual inspection
@@ -125,29 +129,32 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 
 ### 2.2 Test Types
 
-| Type | Purpose | Tool | Frequency |
-|------|---------|------|-----------|
-| **Unit** | Test individual functions/methods | `cargo test` | Every commit |
-| **Integration** | Test end-to-end workflows | `cargo test --test` | Every PR |
-| **Property** | Test invariants with random inputs | `proptest` | Every PR |
-| **Hardware** | Validate printer output | Manual | Weekly |
-| **Golden Master** | Byte-level output validation | `cargo test` | Every PR |
-| **Benchmark** | Performance regression detection | `criterion` | Every PR |
-| **Fuzzing** | Find panics/crashes | `cargo-fuzz` | Nightly |
+| Type              | Purpose                            | Tool                | Frequency    |
+| ----------------- | ---------------------------------- | ------------------- | ------------ |
+| **Unit**          | Test individual functions/methods  | `cargo test`        | Every commit |
+| **Integration**   | Test end-to-end workflows          | `cargo test --test` | Every PR     |
+| **Property**      | Test invariants with random inputs | `proptest`          | Every PR     |
+| **Hardware**      | Validate printer output            | Manual              | Weekly       |
+| **Golden Master** | Byte-level output validation       | `cargo test`        | Every PR     |
+| **Benchmark**     | Performance regression detection   | `criterion`         | Every PR     |
+| **Fuzzing**       | Find panics/crashes                | `cargo-fuzz`        | Nightly      |
 
 ### 2.3 Test Approach
 
 **Bottom-Up**:
+
 1. Start with unit tests for core types (Cell, Page)
 2. Build up to integration tests (document rendering)
 3. Finish with hardware validation
 
 **TDD (Test-Driven Development)**:
+
 - Write tests before implementation
 - Red → Green → Refactor cycle
 - All public APIs get tests first
 
 **Continuous Testing**:
+
 - Automated in CI/CD pipeline
 - Fast feedback on every commit
 - Block merges on test failures
@@ -163,6 +170,7 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 **Duration**: < 10 seconds
 
 **Test Cases**:
+
 - `TC-SMOKE-001`: Can create a page
 - `TC-SMOKE-002`: Can write a cell
 - `TC-SMOKE-003`: Can render a document
@@ -210,6 +218,7 @@ This Test Plan defines the comprehensive testing strategy for the EPSON LQ-2090I
 **Requirement**: FR-P2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_cell_empty() {
@@ -228,6 +237,7 @@ fn test_cell_empty() {
 **Requirement**: FR-P2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_cell_new() {
@@ -246,6 +256,7 @@ fn test_cell_new() {
 **Requirement**: FR-E3
 
 **Test**:
+
 ```rust
 #[test]
 fn test_cell_non_ascii_replacement() {
@@ -263,6 +274,7 @@ fn test_cell_non_ascii_replacement() {
 **Requirement**: Memory efficiency (NFR-3)
 
 **Test**:
+
 ```rust
 #[test]
 fn test_cell_size() {
@@ -282,6 +294,7 @@ fn test_cell_size() {
 **Requirement**: FR-S1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_style_constants() {
@@ -301,6 +314,7 @@ fn test_style_constants() {
 **Requirement**: Memory efficiency
 
 **Test**:
+
 ```rust
 #[test]
 fn test_style_bits_packing() {
@@ -325,6 +339,7 @@ fn test_style_bits_packing() {
 **Requirement**: FR-P1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_page_dimensions() {
@@ -343,6 +358,7 @@ fn test_page_dimensions() {
 **Requirement**: FR-P2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_page_write_cell_in_bounds() {
@@ -364,6 +380,7 @@ fn test_page_write_cell_in_bounds() {
 **Requirement**: FR-P3
 
 **Test**:
+
 ```rust
 #[test]
 fn test_page_write_cell_out_of_bounds() {
@@ -382,6 +399,7 @@ fn test_page_write_cell_out_of_bounds() {
 **Requirement**: FR-P2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_page_write_text() {
@@ -405,6 +423,7 @@ fn test_page_write_text() {
 **Requirement**: FR-T1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_page_horizontal_truncation() {
@@ -432,6 +451,7 @@ fn test_page_horizontal_truncation() {
 **Requirement**: FR-R1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_geometry() {
@@ -452,6 +472,7 @@ fn test_region_geometry() {
 **Requirement**: FR-ERR5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_invalid_dimensions() {
@@ -473,6 +494,7 @@ fn test_region_invalid_dimensions() {
 **Requirement**: FR-R5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_split_horizontal() {
@@ -495,6 +517,7 @@ fn test_region_split_horizontal() {
 **Requirement**: FR-R5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_split_vertical() {
@@ -517,6 +540,7 @@ fn test_region_split_vertical() {
 **Requirement**: FR-ERR5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_split_empty_ratios() {
@@ -543,6 +567,7 @@ fn test_region_split_empty_ratios() {
 **Requirement**: FR-R6
 
 **Test**:
+
 ```rust
 #[test]
 fn test_region_padding() {
@@ -568,6 +593,7 @@ fn test_region_padding() {
 **Requirement**: FR-D1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_document_structure() {
@@ -590,6 +616,7 @@ fn test_document_structure() {
 **Requirement**: FR-D3
 
 **Test**:
+
 ```rust
 #[test]
 fn test_document_immutability() {
@@ -616,6 +643,7 @@ fn test_document_immutability() {
 **Requirement**: FR-E1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_escp_command_order() {
@@ -643,6 +671,7 @@ fn test_escp_command_order() {
 **Requirement**: FR-S2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_escp_bold_on() {
@@ -662,6 +691,7 @@ fn test_escp_bold_on() {
 **Requirement**: FR-S2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_escp_bold_off() {
@@ -682,6 +712,7 @@ fn test_escp_bold_off() {
 **Requirement**: FR-S3
 
 **Test**:
+
 ```rust
 #[test]
 fn test_style_state_machine_optimization() {
@@ -710,6 +741,7 @@ fn test_style_state_machine_optimization() {
 **Requirement**: FR-E3
 
 **Test**:
+
 ```rust
 #[test]
 fn test_non_ascii_replacement() {
@@ -736,6 +768,7 @@ fn test_non_ascii_replacement() {
 **Requirement**: FR-D5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_form_feed_between_pages() {
@@ -763,6 +796,7 @@ fn test_form_feed_between_pages() {
 **Requirement**: FR-W1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_label_left_alignment() {
@@ -787,6 +821,7 @@ fn test_label_left_alignment() {
 **Requirement**: FR-W1
 
 **Test**:
+
 ```rust
 #[test]
 fn test_label_center_alignment() {
@@ -810,6 +845,7 @@ fn test_label_center_alignment() {
 **Requirement**: FR-W6
 
 **Test**:
+
 ```rust
 #[test]
 fn test_table_header() {
@@ -833,6 +869,7 @@ fn test_table_header() {
 **Requirement**: FR-T2
 
 **Test**:
+
 ```rust
 #[test]
 fn test_table_vertical_truncation() {
@@ -863,6 +900,7 @@ fn test_table_vertical_truncation() {
 **Requirements**: Multiple (FR-P*, FR-R*, FR-W*, FR-E*)
 
 **Test**:
+
 ```rust
 #[test]
 fn test_simple_invoice_workflow() {
@@ -903,6 +941,7 @@ fn test_simple_invoice_workflow() {
 **Requirements**: FR-D1, FR-D2, FR-D5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_multi_page_document() {
@@ -939,6 +978,7 @@ fn test_multi_page_document() {
 **Requirements**: FR-R4, FR-R5
 
 **Test**:
+
 ```rust
 #[test]
 fn test_nested_regions() {
@@ -972,6 +1012,7 @@ fn test_nested_regions() {
 **Requirements**: FR-W1 through FR-W6
 
 **Test**:
+
 ```rust
 #[test]
 fn test_all_widgets() {
@@ -992,9 +1033,9 @@ fn test_all_widgets() {
     let para = Paragraph::new("This is a paragraph with wrapping.");
     sections[2].add_widget(para).unwrap();
 
-    // Box
-    let box_widget = Box::new().with_title("Box");
-    sections[3].add_widget(box_widget).unwrap();
+    // Rect
+    let rect_widget = Rect::new().with_title("Rect");
+    sections[3].add_widget(rect_widget).unwrap();
 
     // KeyValue
     let mut kv = KeyValue::new(15);
@@ -1025,6 +1066,7 @@ fn test_all_widgets() {
 **Requirements**: API ergonomics
 
 **Test**:
+
 ```rust
 #[test]
 fn test_builder_chaining() {
@@ -1050,6 +1092,7 @@ fn test_builder_chaining() {
 **Requirements**: FR-ERR2
 
 **Test**:
+
 ```rust
 // This test verifies compile-time safety
 // It should NOT compile (caught by borrow checker)
@@ -1078,6 +1121,7 @@ fn test_builder_lifetime_safety() {
 **Requirement**: NFR-1
 
 **Test**:
+
 ```rust
 use proptest::prelude::*;
 
@@ -1117,6 +1161,7 @@ proptest! {
 **Requirement**: NFR-4
 
 **Test**:
+
 ```rust
 proptest! {
     #[test]
@@ -1141,6 +1186,7 @@ proptest! {
 **Requirement**: NFR-4
 
 **Test**:
+
 ```rust
 proptest! {
     #[test]
@@ -1166,6 +1212,7 @@ proptest! {
 **Requirement**: FR-T1
 
 **Test**:
+
 ```rust
 proptest! {
     #[test]
@@ -1201,6 +1248,7 @@ proptest! {
 **Requirement**: FR-R5
 
 **Test**:
+
 ```rust
 proptest! {
     #[test]
@@ -1225,14 +1273,17 @@ proptest! {
 ### 7.1 Test Environment
 
 **Hardware**:
+
 - EPSON LQ-2090II (primary)
 - EPSON LQ-590 (secondary, for compatibility testing)
 
 **Connection**:
+
 - USB to parallel adapter
 - Direct parallel port (if available)
 
 **Paper**:
+
 - Standard 8.5" × 11" continuous form
 - Multi-part carbonless forms (3-part)
 
@@ -1245,6 +1296,7 @@ proptest! {
 **Requirement**: FR-P1, FR-E1
 
 **Procedure**:
+
 1. Generate document with grid pattern:
    ```
    0         1         2         3         4         5
@@ -1254,6 +1306,7 @@ proptest! {
 3. Measure character positions with ruler
 
 **Pass Criteria**:
+
 - Characters align to 12 CPI (condensed mode)
 - 160 characters fit on one line
 - No horizontal drift
@@ -1265,11 +1318,13 @@ proptest! {
 **Requirement**: FR-P1
 
 **Procedure**:
+
 1. Generate document with 51 numbered lines
 2. Print on EPSON LQ-2090II
 3. Count lines on paper
 
 **Pass Criteria**:
+
 - Exactly 51 lines printed
 - Line spacing is consistent (6 LPI)
 - No vertical drift
@@ -1281,10 +1336,12 @@ proptest! {
 **Requirement**: FR-S2
 
 **Procedure**:
+
 1. Generate document with alternating bold/normal lines
 2. Print and visually inspect
 
 **Pass Criteria**:
+
 - Bold lines are visibly darker
 - Bold does not affect character width
 - No artifacts or smudging
@@ -1296,10 +1353,12 @@ proptest! {
 **Requirement**: FR-S2
 
 **Procedure**:
+
 1. Generate document with underlined text
 2. Print and inspect
 
 **Pass Criteria**:
+
 - Underline is visible under text
 - Underline does not overlap with text
 - Consistent underline across line
@@ -1311,11 +1370,13 @@ proptest! {
 **Requirement**: FR-D5
 
 **Procedure**:
+
 1. Generate 5-page document
 2. Print continuously
 3. Observe page breaks
 
 **Pass Criteria**:
+
 - Clean page breaks (form feed works)
 - No content spanning pages
 - Consistent top margin on each page
@@ -1327,11 +1388,13 @@ proptest! {
 **Requirement**: End-to-end
 
 **Procedure**:
+
 1. Generate complete invoice (header, table, footer)
 2. Print on EPSON LQ-2090II
 3. Visual inspection
 
 **Pass Criteria**:
+
 - Header aligned and readable
 - Table columns aligned
 - Footer positioned correctly
@@ -1346,11 +1409,13 @@ proptest! {
 **Requirement**: FR-W6
 
 **Procedure**:
+
 1. Generate document with multi-column table
 2. Print on EPSON LQ-2090II
 3. Measure column positions
 
 **Pass Criteria**:
+
 - Columns aligned vertically
 - Column widths match specification
 - Headers align with data
@@ -1362,11 +1427,13 @@ proptest! {
 **Requirement**: Print quality
 
 **Procedure**:
+
 1. Load 3-part carbonless form
 2. Print invoice test form
 3. Inspect all 3 copies
 
 **Pass Criteria**:
+
 - All 3 copies are readable
 - Text darkness is sufficient on copy 3
 - Alignment consistent across copies
@@ -1378,10 +1445,12 @@ proptest! {
 **Requirement**: FR-R4
 
 **Procedure**:
+
 1. Generate complex nested layout (sidebar + grid)
 2. Print and inspect
 
 **Pass Criteria**:
+
 - All regions positioned correctly
 - No content overlap
 - Borders and separators aligned
@@ -1393,11 +1462,13 @@ proptest! {
 **Requirement**: Performance, reliability
 
 **Procedure**:
+
 1. Generate 100-page document
 2. Print continuously
 3. Monitor printer and output
 
 **Pass Criteria**:
+
 - All 100 pages print successfully
 - No printer errors or jams
 - Consistent quality from page 1 to 100
@@ -1425,6 +1496,7 @@ proptest! {
 **Expected Output**: `golden_masters/empty_page.escp`
 
 **Test**:
+
 ```rust
 #[test]
 fn test_golden_empty_page() {
@@ -1479,12 +1551,14 @@ fn test_golden_empty_page() {
 ### 8.3 Generating Golden Masters
 
 **Process**:
+
 1. Run test with known-good implementation
 2. Manually verify output on hardware
 3. Save output as golden master
 4. Commit to repository
 
 **Command**:
+
 ```bash
 cargo test test_golden_simple_invoice -- --nocapture > golden_masters/simple_invoice.escp
 ```
@@ -1508,11 +1582,12 @@ cargo test test_golden_simple_invoice -- --nocapture > golden_masters/simple_inv
 **Target**: < 10 μs (p99)
 
 **Benchmark**:
+
 ```rust
 fn bench_page_creation(c: &mut Criterion) {
     c.bench_function("Page::new()", |b| {
         b.iter(|| {
-            black_box(Page::new())
+            black_rect(Page::new())
         });
     });
 }
@@ -1525,6 +1600,7 @@ fn bench_page_creation(c: &mut Criterion) {
 **Target**: < 50 ns (p99)
 
 **Benchmark**:
+
 ```rust
 fn bench_write_cell(c: &mut Criterion) {
     let mut page = Page::new();
@@ -1532,10 +1608,10 @@ fn bench_write_cell(c: &mut Criterion) {
     c.bench_function("Page::write_cell()", |b| {
         b.iter(|| {
             page.write_cell(
-                black_box(10),
-                black_box(10),
-                black_box('A'),
-                black_box(Style::NORMAL)
+                black_rect(10),
+                black_rect(10),
+                black_rect('A'),
+                black_rect(Style::NORMAL)
             );
         });
     });
@@ -1549,6 +1625,7 @@ fn bench_write_cell(c: &mut Criterion) {
 **Target**: < 100 μs (p99)
 
 **Benchmark**:
+
 ```rust
 fn bench_single_page_render(c: &mut Criterion) {
     let mut doc = DocumentBuilder::new();
@@ -1559,7 +1636,7 @@ fn bench_single_page_render(c: &mut Criterion) {
 
     c.bench_function("Document::render() [1 page]", |b| {
         b.iter(|| {
-            black_box(document.render())
+            black_rect(document.render())
         });
     });
 }
@@ -1572,6 +1649,7 @@ fn bench_single_page_render(c: &mut Criterion) {
 **Target**: < 10 ms (p99)
 
 **Benchmark**:
+
 ```rust
 fn bench_hundred_page_render(c: &mut Criterion) {
     let mut doc = DocumentBuilder::new();
@@ -1584,7 +1662,7 @@ fn bench_hundred_page_render(c: &mut Criterion) {
 
     c.bench_function("Document::render() [100 pages]", |b| {
         b.iter(|| {
-            black_box(document.render())
+            black_rect(document.render())
         });
     });
 }
@@ -1597,13 +1675,14 @@ fn bench_hundred_page_render(c: &mut Criterion) {
 **Target**: < 1 μs (p99)
 
 **Benchmark**:
+
 ```rust
 fn bench_region_split(c: &mut Criterion) {
     let mut region = Region::new(0, 0, 160, 51).unwrap();
 
     c.bench_function("Region::split_horizontal()", |b| {
         b.iter(|| {
-            let _ = region.split_horizontal(black_box(&[1, 2, 1]));
+            let _ = region.split_horizontal(black_rect(&[1, 2, 1]));
         });
     });
 }
@@ -1614,6 +1693,7 @@ fn bench_region_split(c: &mut Criterion) {
 #### BENCH-006: Table Rendering
 
 **Benchmark**:
+
 ```rust
 fn bench_table_render(c: &mut Criterion) {
     let mut table = Table::new(vec![30, 30, 30]);
@@ -1642,16 +1722,19 @@ fn bench_table_render(c: &mut Criterion) {
 ### 9.3 Benchmark Execution
 
 **Run benchmarks**:
+
 ```bash
 cargo bench
 ```
 
 **View results**:
+
 ```bash
 open target/criterion/report/index.html
 ```
 
 **CI Integration**:
+
 - Run on every PR
 - Fail if regression > 10%
 
@@ -1680,6 +1763,7 @@ open target/criterion/report/index.html
 **Objective**: No panics, no OOM
 
 **Code**:
+
 ```rust
 #![no_main]
 use libfuzzer_sys::fuzz_target;
@@ -1709,6 +1793,7 @@ fuzz_target!(|data: &[u8]| {
 **Objective**: Correct ASCII conversion, no corruption
 
 **Code**:
+
 ```rust
 fuzz_target!(|data: &[u8]| {
     let text = String::from_utf8_lossy(data);
@@ -1732,11 +1817,13 @@ fuzz_target!(|data: &[u8]| {
 ### 10.3 Fuzzing Execution
 
 **Run fuzzing**:
+
 ```bash
 cargo fuzz run fuzz_region_geometry -- -max_total_time=600
 ```
 
 **Reproduce crash**:
+
 ```bash
 cargo fuzz run fuzz_region_geometry crash-<hash>
 ```
@@ -1752,6 +1839,7 @@ cargo fuzz run fuzz_region_geometry crash-<hash>
 **Rust**: Stable, MSRV (1.75.0), Nightly
 
 **Tools**:
+
 - `cargo test`
 - `cargo bench`
 - `cargo-fuzz`
@@ -1764,12 +1852,14 @@ cargo fuzz run fuzz_region_geometry crash-<hash>
 **Platform**: GitHub Actions
 
 **Matrix**:
+
 ```yaml
 os: [ubuntu-latest, macos-latest, windows-latest]
 rust: [stable, "1.75.0", nightly]
 ```
 
 **Jobs**:
+
 1. **Test**: `cargo test --all-features`
 2. **Bench**: `cargo bench --no-run`
 3. **Fuzz**: `cargo fuzz run <target> -- -runs=1000000`
@@ -1782,6 +1872,7 @@ rust: [stable, "1.75.0", nightly]
 **Location**: QA Lab
 
 **Equipment**:
+
 - EPSON LQ-2090II (serial #12345)
 - USB to Parallel adapter (model: XYZ)
 - Continuous form paper (8.5" × 11")
@@ -1810,16 +1901,17 @@ rust: [stable, "1.75.0", nightly]
 **File**: `tests/fixtures/invoice_data.json`
 
 **Content**:
+
 ```json
 {
   "invoice_number": "INV-2025-001",
   "date": "2025-01-18",
   "customer": "Acme Corp",
   "items": [
-    {"code": "A001", "description": "Widget", "qty": 10, "price": 125.50},
-    {"code": "B002", "description": "Gadget", "qty": 5, "price": 87.25}
+    { "code": "A001", "description": "Widget", "qty": 10, "price": 125.5 },
+    { "code": "B002", "description": "Gadget", "qty": 5, "price": 87.25 }
   ],
-  "total": 1542.50
+  "total": 1542.5
 }
 ```
 
@@ -1865,50 +1957,50 @@ pub fn fixture_standard_invoice() -> Document {
 
 ### 13.1 Requirements to Test Cases
 
-| Requirement | Description | Test Cases | Status |
-|-------------|-------------|------------|--------|
-| **FR-P1** | Page dimensions 160×51 | TC-PAGE-DIM-001 | [ ] |
-| **FR-P2** | Cell model | TC-CELL-001, TC-CELL-002, TC-PAGE-002 | [ ] |
-| **FR-P3** | Boundary clipping | TC-PAGE-003, TC-PROP-PANIC-001 | [ ] |
-| **FR-P4** | Page immutability | TC-DOC-IMMUT-001 | [ ] |
-| **FR-R1** | Region geometry | TC-REGION-GEO-001, FUZZ-001 | [ ] |
-| **FR-R2** | Local coordinates | TC-E2E-003 | [ ] |
-| **FR-R3** | Region clipping | TC-PROP-TRUNC-001 | [ ] |
-| **FR-R4** | Nesting support | TC-E2E-003, TC-HW-009 | [ ] |
-| **FR-R5** | Splitting API | TC-SPLIT-H-001, TC-SPLIT-V-001, TC-PROP-SPLIT-001 | [ ] |
-| **FR-R6** | Padding | TC-PADDING-001 | [ ] |
-| **FR-R7** | Default style | (To be added) | [ ] |
-| **FR-D1** | Document structure | TC-DOC-001 | [ ] |
-| **FR-D2** | Manual pagination | TC-E2E-002 | [ ] |
-| **FR-D3** | Document immutability | TC-DOC-IMMUT-001 | [ ] |
-| **FR-D4** | ESC/P rendering | TC-RENDER-ORDER-001, TC-HW-001 | [ ] |
-| **FR-D5** | Page separation (FF) | TC-FF-001, TC-HW-005 | [ ] |
-| **FR-W1** | Label widget | TC-LABEL-001, TC-LABEL-002 | [ ] |
-| **FR-W2** | TextBlock widget | TC-E2E-004 | [ ] |
-| **FR-W3** | Paragraph widget | TC-E2E-004 | [ ] |
-| **FR-W4** | Box widget | TC-E2E-004 | [ ] |
-| **FR-W5** | KeyValue widget | TC-E2E-004 | [ ] |
-| **FR-W6** | Table widget | TC-TABLE-001, TC-TABLE-002, TC-HW-007 | [ ] |
-| **FR-S1** | Supported styles | TC-STYLE-001 | [ ] |
-| **FR-S2** | ESC/P command mapping | TC-ESC-MAP-001, TC-ESC-MAP-002, TC-HW-003, TC-HW-004 | [ ] |
-| **FR-S3** | Style state machine | TC-STATE-MACH-001 | [ ] |
-| **FR-T1** | Horizontal truncation | TC-PAGE-005, TC-PROP-TRUNC-001 | [ ] |
-| **FR-T2** | Vertical truncation | TC-TABLE-002 | [ ] |
-| **FR-T3** | Page boundary truncation | TC-PAGE-003 | [ ] |
-| **FR-T4** | No error on overflow | TC-PROP-PANIC-001, TC-PROP-PANIC-002 | [ ] |
-| **FR-E1** | Rendering order | TC-RENDER-ORDER-001 | [ ] |
-| **FR-E2** | Deterministic output | TC-PROP-DETERM-001, TC-GOLDEN-* | [ ] |
-| **FR-E3** | Character safety | TC-CELL-003, TC-ASCII-SAFE-001, FUZZ-002 | [ ] |
-| **FR-E4** | Text mode only | (Code review) | [ ] |
-| **FR-ERR1** | Error type | (API tests) | [ ] |
-| **FR-ERR2** | Result types | TC-BUILDER-002 | [ ] |
-| **FR-ERR3** | Panic policy | TC-PROP-PANIC-*, FUZZ-* | [ ] |
-| **FR-ERR5** | Validation | TC-REGION-002, TC-SPLIT-002 | [ ] |
-| **NFR-1** | Determinism | TC-PROP-DETERM-001 | [ ] |
-| **NFR-2** | Performance | BENCH-001 through BENCH-006 | [ ] |
-| **NFR-4** | Safety (no panics) | TC-PROP-PANIC-*, FUZZ-* | [ ] |
-| **NFR-5** | Portability | (CI matrix) | [ ] |
-| **NFR-6** | Thread safety | (Compile-time check) | [ ] |
+| Requirement | Description              | Test Cases                                           | Status |
+| ----------- | ------------------------ | ---------------------------------------------------- | ------ |
+| **FR-P1**   | Page dimensions 160×51   | TC-PAGE-DIM-001                                      | [ ]    |
+| **FR-P2**   | Cell model               | TC-CELL-001, TC-CELL-002, TC-PAGE-002                | [ ]    |
+| **FR-P3**   | Boundary clipping        | TC-PAGE-003, TC-PROP-PANIC-001                       | [ ]    |
+| **FR-P4**   | Page immutability        | TC-DOC-IMMUT-001                                     | [ ]    |
+| **FR-R1**   | Region geometry          | TC-REGION-GEO-001, FUZZ-001                          | [ ]    |
+| **FR-R2**   | Local coordinates        | TC-E2E-003                                           | [ ]    |
+| **FR-R3**   | Region clipping          | TC-PROP-TRUNC-001                                    | [ ]    |
+| **FR-R4**   | Nesting support          | TC-E2E-003, TC-HW-009                                | [ ]    |
+| **FR-R5**   | Splitting API            | TC-SPLIT-H-001, TC-SPLIT-V-001, TC-PROP-SPLIT-001    | [ ]    |
+| **FR-R6**   | Padding                  | TC-PADDING-001                                       | [ ]    |
+| **FR-R7**   | Default style            | (To be added)                                        | [ ]    |
+| **FR-D1**   | Document structure       | TC-DOC-001                                           | [ ]    |
+| **FR-D2**   | Manual pagination        | TC-E2E-002                                           | [ ]    |
+| **FR-D3**   | Document immutability    | TC-DOC-IMMUT-001                                     | [ ]    |
+| **FR-D4**   | ESC/P rendering          | TC-RENDER-ORDER-001, TC-HW-001                       | [ ]    |
+| **FR-D5**   | Page separation (FF)     | TC-FF-001, TC-HW-005                                 | [ ]    |
+| **FR-W1**   | Label widget             | TC-LABEL-001, TC-LABEL-002                           | [ ]    |
+| **FR-W2**   | TextBlock widget         | TC-E2E-004                                           | [ ]    |
+| **FR-W3**   | Paragraph widget         | TC-E2E-004                                           | [ ]    |
+| **FR-W4**   | Rect widget              | TC-E2E-004                                           | [ ]    |
+| **FR-W5**   | KeyValue widget          | TC-E2E-004                                           | [ ]    |
+| **FR-W6**   | Table widget             | TC-TABLE-001, TC-TABLE-002, TC-HW-007                | [ ]    |
+| **FR-S1**   | Supported styles         | TC-STYLE-001                                         | [ ]    |
+| **FR-S2**   | ESC/P command mapping    | TC-ESC-MAP-001, TC-ESC-MAP-002, TC-HW-003, TC-HW-004 | [ ]    |
+| **FR-S3**   | Style state machine      | TC-STATE-MACH-001                                    | [ ]    |
+| **FR-T1**   | Horizontal truncation    | TC-PAGE-005, TC-PROP-TRUNC-001                       | [ ]    |
+| **FR-T2**   | Vertical truncation      | TC-TABLE-002                                         | [ ]    |
+| **FR-T3**   | Page boundary truncation | TC-PAGE-003                                          | [ ]    |
+| **FR-T4**   | No error on overflow     | TC-PROP-PANIC-001, TC-PROP-PANIC-002                 | [ ]    |
+| **FR-E1**   | Rendering order          | TC-RENDER-ORDER-001                                  | [ ]    |
+| **FR-E2**   | Deterministic output     | TC-PROP-DETERM-001, TC-GOLDEN-\*                     | [ ]    |
+| **FR-E3**   | Character safety         | TC-CELL-003, TC-ASCII-SAFE-001, FUZZ-002             | [ ]    |
+| **FR-E4**   | Text mode only           | (Code review)                                        | [ ]    |
+| **FR-ERR1** | Error type               | (API tests)                                          | [ ]    |
+| **FR-ERR2** | Result types             | TC-BUILDER-002                                       | [ ]    |
+| **FR-ERR3** | Panic policy             | TC-PROP-PANIC-_, FUZZ-_                              | [ ]    |
+| **FR-ERR5** | Validation               | TC-REGION-002, TC-SPLIT-002                          | [ ]    |
+| **NFR-1**   | Determinism              | TC-PROP-DETERM-001                                   | [ ]    |
+| **NFR-2**   | Performance              | BENCH-001 through BENCH-006                          | [ ]    |
+| **NFR-4**   | Safety (no panics)       | TC-PROP-PANIC-_, FUZZ-_                              | [ ]    |
+| **NFR-5**   | Portability              | (CI matrix)                                          | [ ]    |
+| **NFR-6**   | Thread safety            | (Compile-time check)                                 | [ ]    |
 
 **Total Test Cases**: 70+ (unit) + 50+ (integration) + 20+ (property) + 10 (hardware) + 20+ (golden) + 6 (benchmarks) = **176+ test cases**
 
@@ -1918,21 +2010,22 @@ pub fn fixture_standard_invoice() -> Document {
 
 ### 14.1 Phase-Based Testing
 
-| Phase | Duration | Focus | Test Types |
-|-------|----------|-------|------------|
-| **Phase 1** | Week 1-2 | Core types | Unit tests for Cell, Page, Style |
-| **Phase 2** | Week 3 | Builder API | Unit + Integration for builders |
-| **Phase 3** | Week 4 | Region system | Unit + Property for regions |
-| **Phase 4** | Week 5-6 | Widgets | Unit + Integration for all widgets |
-| **Phase 5** | Week 7 | Rendering | Unit + Golden master tests |
-| **Phase 6** | Week 8 | Validation | Hardware + Performance + Fuzzing |
-| **Phase 7** | Week 9 | Regression | Full suite + final hardware tests |
+| Phase       | Duration | Focus         | Test Types                         |
+| ----------- | -------- | ------------- | ---------------------------------- |
+| **Phase 1** | Week 1-2 | Core types    | Unit tests for Cell, Page, Style   |
+| **Phase 2** | Week 3   | Builder API   | Unit + Integration for builders    |
+| **Phase 3** | Week 4   | Region system | Unit + Property for regions        |
+| **Phase 4** | Week 5-6 | Widgets       | Unit + Integration for all widgets |
+| **Phase 5** | Week 7   | Rendering     | Unit + Golden master tests         |
+| **Phase 6** | Week 8   | Validation    | Hardware + Performance + Fuzzing   |
+| **Phase 7** | Week 9   | Regression    | Full suite + final hardware tests  |
 
 ---
 
 ### 14.2 Daily Testing
 
 **Developer Workflow**:
+
 ```bash
 # Before commit
 cargo test
@@ -1948,21 +2041,25 @@ cargo bench --no-run
 ### 14.3 CI Testing
 
 **On Every Commit**:
+
 - Unit tests (all platforms)
 - Clippy lints
 - Format check
 
 **On Every PR**:
+
 - Full test suite
 - Property-based tests (10K iterations)
 - Benchmarks (regression check)
 - Coverage report
 
 **Nightly**:
+
 - Fuzzing (1M+ iterations per target)
 - Extended property tests (100K iterations)
 
 **Weekly**:
+
 - Hardware validation (10 test forms)
 - Full benchmark suite
 - Coverage report
@@ -2042,8 +2139,8 @@ cargo bench --no-run
       "item_code": "TEST-001",
       "description": "Test Widget - Standard Size",
       "quantity": 10,
-      "unit_price": 125.50,
-      "total": 1255.00
+      "unit_price": 125.5,
+      "total": 1255.0
     },
     {
       "item_code": "TEST-002",
@@ -2056,12 +2153,12 @@ cargo bench --no-run
       "item_code": "TEST-003",
       "description": "Test Component - Industrial",
       "quantity": 20,
-      "unit_price": 15.00,
-      "total": 300.00
+      "unit_price": 15.0,
+      "total": 300.0
     }
   ],
   "subtotal": 1991.25,
-  "tax": 159.30,
+  "tax": 159.3,
   "total": 2150.55
 }
 ```
@@ -2071,31 +2168,37 @@ cargo bench --no-run
 ### Appendix B: Test Commands
 
 **Run all tests**:
+
 ```bash
 cargo test
 ```
 
 **Run specific test**:
+
 ```bash
 cargo test test_page_dimensions
 ```
 
 **Run with coverage**:
+
 ```bash
 cargo tarpaulin --out Html --output-dir coverage
 ```
 
 **Run benchmarks**:
+
 ```bash
 cargo bench
 ```
 
 **Run fuzzing**:
+
 ```bash
 cargo fuzz run fuzz_region_geometry
 ```
 
 **Generate golden masters**:
+
 ```bash
 cargo test --test golden_masters -- --nocapture
 ```
@@ -2104,7 +2207,7 @@ cargo test --test golden_masters -- --nocapture
 
 ### Appendix C: Bug Report Template
 
-```markdown
+````markdown
 ## Bug Report
 
 **Test Case**: TC-XXX-XXX
@@ -2115,6 +2218,7 @@ cargo test --test golden_masters -- --nocapture
 [Describe the bug]
 
 **Steps to Reproduce**:
+
 1. [Step 1]
 2. [Step 2]
 
@@ -2125,19 +2229,24 @@ cargo test --test golden_masters -- --nocapture
 [What actually happened]
 
 **Environment**:
+
 - OS: [e.g., Ubuntu 22.04]
 - Rust version: [e.g., 1.75.0]
 - Hardware: [if applicable]
 
 **Test Code**:
+
 ```rust
 [Minimal reproduction code]
 ```
+````
 
 **Logs**:
+
 ```
 [Error messages]
 ```
+
 ```
 
 ---
@@ -2176,3 +2285,4 @@ cargo test --test golden_masters -- --nocapture
 **Related**: `PRD.md`, `TDD.md`, `API-SPEC.md`
 
 ---
+```

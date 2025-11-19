@@ -1,6 +1,6 @@
 //! Integration tests for multi-page document rendering (User Story 3)
 
-use escp_layout::{Document, Page, Region, StyleFlags};
+use escp_layout::{Document, Page, StyleFlags};
 
 #[test]
 fn test_multi_page_document_with_different_content() {
@@ -71,29 +71,19 @@ fn test_multi_page_independent_layouts() {
 
     // Page 1: Full-width content
     let mut page1_builder = Page::builder();
-    let full_region = Region::full_page();
-    page1_builder.write_str(
-        full_region.x(),
-        full_region.y(),
-        "Full Width Page",
-        StyleFlags::BOLD,
-    );
+    page1_builder.write_str(0, 0, "Full Width Page", StyleFlags::BOLD);
     doc_builder.add_page(page1_builder.build());
 
-    // Page 2: Split layout (header/body)
+    // Page 2: Header/body layout
     let mut page2_builder = Page::builder();
-    let full = Region::full_page();
-    let (header, body) = full.split_vertical(10).unwrap();
-    page2_builder.write_str(header.x(), header.y(), "Header Section", StyleFlags::BOLD);
-    page2_builder.write_str(body.x(), body.y(), "Body Section", StyleFlags::NONE);
+    page2_builder.write_str(0, 0, "Header Section", StyleFlags::BOLD);
+    page2_builder.write_str(0, 10, "Body Section", StyleFlags::NONE);
     doc_builder.add_page(page2_builder.build());
 
-    // Page 3: Split layout (left/right)
+    // Page 3: Left/right columns
     let mut page3_builder = Page::builder();
-    let full = Region::full_page();
-    let (left, right) = full.split_horizontal(80).unwrap();
-    page3_builder.write_str(left.x(), left.y(), "Left Column", StyleFlags::UNDERLINE);
-    page3_builder.write_str(right.x(), right.y(), "Right Column", StyleFlags::UNDERLINE);
+    page3_builder.write_str(0, 0, "Left Column", StyleFlags::UNDERLINE);
+    page3_builder.write_str(80, 0, "Right Column", StyleFlags::UNDERLINE);
     doc_builder.add_page(page3_builder.build());
 
     let document = doc_builder.build();
