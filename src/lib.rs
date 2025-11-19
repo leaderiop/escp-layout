@@ -45,6 +45,9 @@ mod region;
 /// Widget implementations for common content types
 pub mod widgets;
 
+/// Widget composability system (new feature)
+pub mod widget;
+
 // Public API exports
 pub use cell::{Cell, StyleFlags};
 pub use document::{Document, DocumentBuilder};
@@ -52,5 +55,5 @@ pub use error::LayoutError;
 pub use page::{Page, PageBuilder};
 pub use region::Region;
 
-// Re-export Widget trait for convenience
+// Re-export Widget trait for convenience (legacy widgets module)
 pub use widgets::Widget;

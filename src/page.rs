@@ -167,6 +167,43 @@ impl PageBuilder {
         self
     }
 
+    /// Render a widget tree to this page (new widget composability system).
+    ///
+    /// The widget tree is traversed depth-first, with each widget rendering
+    /// at its cumulative absolute position. The root widget is always positioned
+    /// at (0, 0).
+    ///
+    /// Widgets are borrowed immutably and can be rendered multiple times.
+    ///
+    /// # Errors
+    ///
+    /// Returns `RenderError::OutOfBounds` if any widget attempts to render
+    /// outside page bounds (160 × 51).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use escp_layout::Page;
+    /// use escp_layout::widget::{box_new, label_new};
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let mut root = box_new!(80, 30);
+    /// let label = label_new!(20).add_text("Hello")?;
+    /// root.add_child(label, (0, 0))?;
+    ///
+    /// let mut page_builder = Page::builder();
+    /// page_builder.render(&root)?;  // Can render multiple times
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn render(
+        &mut self,
+        widget: &impl crate::widget::Widget,
+    ) -> Result<(), crate::widget::RenderError> {
+        let mut context = crate::widget::RenderContext::new(self);
+        widget.render_to(&mut context, (0, 0))
+    }
+
     /// Consumes the builder and returns an immutable Page.
     ///
     /// After calling this, the builder cannot be reused.

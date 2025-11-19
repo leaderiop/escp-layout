@@ -1,13 +1,32 @@
 <!--
-Version Change: 1.0.0 (Initial Constitution)
-Modified Principles: None (initial creation)
-Added Sections: All sections (initial creation)
+Version Change: 1.3.0 (Amendment: Rust Version Update to 1.91.1)
+Modified Principles: None (technical specification update only)
+Added Sections: None
 Removed Sections: None
 Templates Requiring Updates:
-  ✅ plan-template.md (will be validated in sync check)
-  ✅ spec-template.md (will be validated in sync check)
-  ✅ tasks-template.md (will be validated in sync check)
-Follow-up TODOs: None
+  ⚠ plan-template.md (update Rust version examples from 1.75 to 1.91.1)
+  ⚠ Cargo.toml (update rust-version field)
+  ⚠ specs/*/plan.md (update Language/Version field)
+  ⚠ CLAUDE.md (auto-generated, will update on next run)
+  ⚠ docs/PRD.md (update MSRV references)
+  ⚠ docs/API-SPEC.md (update MSRV references)
+  ⚠ specs/*/quickstart.md (update prerequisite version)
+Follow-up TODOs:
+  - Update Cargo.toml rust-version = "1.91.1"
+  - Update all spec.md references from "Rust 1.75+" to "Rust 1.91.1+"
+  - Update all plan.md Language/Version fields
+  - Run CI to verify Rust 1.91.1 compatibility
+  - Update docs/PRD.md MSRV requirement
+  - Update docs/API-SPEC.md MSRV specification
+Rationale for Amendment:
+  Upgraded Minimum Supported Rust Version (MSRV) from 1.75.0 to 1.91.1 to leverage
+  newer const generic improvements, better diagnostics, and stabilized features that
+  improve the widget composability system. Rust 1.91.1 provides better const generic
+  value constraints which align with Constitution Principle VI's preference for
+  compile-time validation. This is a MINOR version bump because it changes a technical
+  specification (MSRV) that affects compatibility but doesn't alter governance principles.
+Previous Version: 1.2.2 (amended 2025-11-19)
+Amendment Date: 2025-11-19
 -->
 
 # EPSON LQ-2090II Rust Layout Engine — Project Constitution
@@ -16,7 +35,7 @@ Follow-up TODOs: None
 
 ### I. Deterministic Behavior (NON-NEGOTIABLE)
 
-**Principle**: The library MUST produce byte-for-byte identical ESC/P output for identical inputs across all platforms, compiler versions, and execution environments.
+**Principle**: The library MUST produce byte-for-byte identical ESC/P output for identical inputs across all platforms, compiler versions (Rust 1.91.1+), and execution environments.
 
 **Requirements**:
 - Same `Document` input → Identical ESC/P byte stream output
@@ -58,7 +77,7 @@ Follow-up TODOs: None
 
 ---
 
-### III. Strict Truncation and Clipping (NON-NEGOTIABLE)
+### III. Strict Truncation and Clipping (NON-NEGOTIABLE, with Widget Exception)
 
 **Principle**: All content overflow MUST be silently truncated. Truncation is NOT an error condition and MUST NOT produce warnings or panics.
 
@@ -71,20 +90,44 @@ Follow-up TODOs: None
 
 **Implementation**:
 ```rust
-// ✅ Correct: Silent truncation
+// ✅ Correct: Silent truncation (PageBuilder, Region)
 if x >= width || y >= height {
     return; // Silent drop
 }
 
-// ❌ Wrong: Error on overflow
+// ❌ Wrong: Error on overflow (PageBuilder, Region)
 if x >= width {
     return Err(LayoutError::Overflow); // NOT ALLOWED
 }
 ```
 
-**Rationale**: Graceful degradation for regulatory forms where partial content is better than no content. Printers clip content at physical margins; our behavior matches hardware reality.
+**Widget Composability Exception** (Added 2025-11-19, Expanded 2025-11-19):
+The widget composability system (feature 002) is **exempt** from silent truncation rules and MUST return `Result<(), RenderError>` for violations:
 
-**Testing**: Property-based tests MUST verify zero panics with arbitrary out-of-bounds inputs. Fuzzing MUST run 1M+ iterations without crashes.
+- **Boundary violations during composition**: `parent.add_child(child, pos)` returns errors for:
+  - Child widget exceeds parent bounds (`ChildExceedsParent`)
+  - Out-of-bounds positioning (`OutOfBounds`)
+  - Zero-size parent widget (`ZeroSizeParent`)
+  - Overlapping children (`OverlappingChildren`)
+
+- **Content validation at widget construction**: Widget constructors return errors for:
+  - Text content exceeding widget dimensions (e.g., `Label::<WIDTH, HEIGHT>::new(text)` where `text.len() > WIDTH` returns `Err(TextExceedsWidth)`)
+  - Invalid content that cannot fit within declared widget bounds
+
+- **Boundary violations during render phase**: `widget.render_to(context, pos)` returns errors for:
+  - Writes outside widget bounds
+  - Content positioning violations
+
+**Validation Strategy** (Added 2025-11-19):
+- **Prefer compile-time validation**: Use const generics and type system to prevent invalid states
+- **Use debug_assert!**: For development-time contract checks (zero runtime cost in release builds)
+- **Runtime Result errors**: Only when compile-time validation is impossible (e.g., text length checks)
+
+**Rationale**: Widget boundary and content errors enable developers to detect layout bugs early and handle violations gracefully, supporting the composition mental model where parent-child relationships and content sizing have explicit safety contracts. Silent truncation remains for PageBuilder/Region to match hardware reality.
+
+**Scope limitation**: This exception applies ONLY to `Widget` trait implementations, `RenderContext`, and widget constructors (Label, Box, etc.). Underlying `PageBuilder` and `Region` APIs maintain silent truncation.
+
+**Testing**: Property-based tests MUST verify zero panics with arbitrary out-of-bounds inputs for PageBuilder/Region. Widget tests MUST verify `Result::Err` for boundary and content violations.
 
 ---
 
@@ -146,6 +189,8 @@ Vec<u8> (ESC/P bytes)
 
 **Principle**: The builder API MUST use Rust lifetimes for compile-time safety and provide ergonomic, type-safe construction patterns.
 
+**Minimum Supported Rust Version (MSRV)**: **1.91.1** (stable channel, 2021 edition)
+
 **Lifetime Hierarchy**:
 ```
 DocumentBuilder (owns data)
@@ -164,12 +209,95 @@ RegionHandle<'page> (borrows from PageBuilder)
 
 **Error Handling**:
 - Geometry errors return `Result<T, LayoutError>`
-- Content overflow silently truncates (no errors)
+- Content overflow silently truncates for PageBuilder/Region (no errors)
+- Widget content validation returns `Result<T, RenderError>` per Principle III Widget Exception
 - All public APIs documented with error conditions
 
-**Rationale**: Rust's type system enforces correctness at compile-time, preventing entire classes of runtime errors. Lifetime safety prevents use-after-free and dangling references without runtime overhead.
+**Widget Construction Syntax** (Added 2025-11-19):
 
-**Validation**: Compile-time tests MUST verify rejection of invalid API usage. Examples MUST demonstrate idiomatic Rust patterns.
+The library provides **two equivalent syntaxes** for widget construction, both leveraging const generics for compile-time type safety:
+
+**1. Turbofish Syntax** (Direct const generic instantiation):
+```rust
+// Widget creation with explicit const generics
+let container = Box::<80, 30>::new();
+let label = Label::<20, 1>::new("Hello")?;
+
+// Layout component creation
+let column = Column::<80, 30>::new();
+let (box1, pos1) = column.area::<10>()?;
+```
+
+**2. Macro Wrapper Syntax** (Ergonomic alternative):
+```rust
+// Macro wrappers expand to turbofish syntax at compile time
+let container = box_new!(80, 30);
+let label = label_new!("Hello", 20, 1)?;
+
+// Layout component macros
+let column = column_new!(80, 30);
+let (box1, pos1) = column_area!(column, 10)?;
+```
+
+**Macro Design Principles**:
+- Macros MUST expand to turbofish syntax (zero abstraction overhead)
+- Both syntaxes are officially supported and equivalent
+- Macros provide ergonomic benefits without sacrificing type safety
+- Developers MAY choose either syntax based on preference
+- Documentation examples SHOULD demonstrate both approaches
+
+**Rationale**: Turbofish syntax provides explicit control and clarity, while macro wrappers reduce visual noise and improve readability for common patterns. Supporting both syntaxes accommodates different developer preferences without fragmenting the API.
+
+**Validation Strategy** (Added 2025-11-19):
+
+The library MUST prioritize compile-time validation over runtime validation to minimize overhead and maximize type safety:
+
+**Validation Hierarchy** (prefer in order):
+1. **Compile-time validation** (preferred):
+   - Const generics for dimensions: `Box<WIDTH, HEIGHT>`, `Label<WIDTH, 1>`
+   - Type system constraints via trait bounds
+   - Lifetime constraints preventing invalid usage
+   - Zero runtime cost, errors caught at compile-time
+
+2. **Development-time assertions** (debug builds only):
+   - `debug_assert!` for contract violations and invariant checks
+   - Examples: non-zero dimensions, valid coordinate ranges
+   - Zero cost in release builds (stripped by compiler)
+   - Catches developer errors during testing
+
+3. **Runtime validation** (only when compile-time impossible):
+   - `Result<T, Error>` for user-provided data that cannot be validated at compile-time
+   - Examples: text content length, dynamic overlap detection
+   - Use sparingly to minimize runtime overhead
+   - Document clearly in API why runtime check is necessary
+
+**Application Examples**:
+```rust
+// ✅ Preferred: Compile-time validation via const generics
+impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
+    pub fn new() -> Self {
+        // Compile error if WIDTH or HEIGHT are 0
+    }
+}
+
+// ✅ Good: Debug assertion for development-time checks
+pub fn add_child(&mut self, widget: impl Widget, pos: (u16, u16)) -> Result<(), RenderError> {
+    debug_assert!(WIDTH > 0 && HEIGHT > 0, "Zero-size parent");
+    // Runtime validation for user-provided data
+    if child_exceeds_bounds { return Err(...); }
+}
+
+// ⚠️ Use sparingly: Runtime validation only when compile-time impossible
+pub fn new(text: &str) -> Result<Self, RenderError> {
+    if text.len() > WIDTH {
+        return Err(RenderError::TextExceedsWidth);
+    }
+}
+```
+
+**Rationale**: Compile-time validation leverages Rust's type system to prevent entire classes of errors without runtime cost. Debug assertions catch developer mistakes during testing with zero production overhead. Runtime validation is reserved for user-provided data that cannot be statically checked. Rust 1.91.1 provides improved const generic features that enable better compile-time validation.
+
+**Validation**: Compile-time tests MUST verify rejection of invalid API usage. Examples MUST demonstrate idiomatic Rust patterns. CI MUST run tests in both debug and release modes to verify debug_assert! behavior. CI MUST test on Rust 1.91.1 stable.
 
 ---
 
@@ -196,16 +324,48 @@ RegionHandle<'page> (borrows from PageBuilder)
 
 ### VIII. Fixed-Layout Constraints
 
-**Principle**: All layout dimensions MUST be specified explicitly by the developer at build time. No auto-sizing or dynamic layout in V1.
+**Principle**: All layout dimensions MUST be specified explicitly by the developer at construction time. No auto-sizing or dynamic layout in V1.
 
 **Requirements**:
 - Regions have fixed `(x, y, width, height)` specified by developer
+- Widget dimensions fixed at construction time (via const generics or constructor parameters)
 - No content-based auto-sizing
 - No constraint solvers or layout algorithms
 - No relative sizing (percent-based widths/heights)
 - Padding reduces inner usable area (predictable calculation)
 
-**Rationale**: Predictable, testable, and matches regulatory form requirements where exact positioning is mandatory. Static layout eliminates non-deterministic rendering behavior.
+**Widget Dimension Specification** (Clarified 2025-11-19, Updated 2025-11-19):
+
+Widget dimensions MUST be specified at construction time using **const generics** with either turbofish syntax or macro wrappers:
+
+**Turbofish Syntax**:
+```rust
+// Widget construction with explicit dimensions
+let container = Box::<80, 30>::new();
+let label = Label::<20, 1>::new("text")?;
+
+// Layout component usage
+let column = Column::<80, 30>::new();
+let (nested_box, pos) = column.area::<10>()?;  // Returns Box<80, 10>
+```
+
+**Macro Wrapper Syntax**:
+```rust
+// Equivalent macro-based construction
+let container = box_new!(80, 30);
+let label = label_new!("text", 20, 1)?;
+
+// Layout component macros
+let column = column_new!(80, 30);
+let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
+```
+
+**Dimension Requirements**:
+- All dimensions known at compile-time before widget tree traversal
+- Both turbofish and macro syntaxes are officially supported and equivalent
+- Developers MAY choose either syntax based on preference
+
+**Rationale**: Predictable, testable, and matches regulatory form requirements where exact positioning is mandatory. Static layout eliminates non-deterministic rendering behavior. Fixed widget dimensions at construction enable early validation and error detection via compile-time checks (const generics) per Principle VI Validation Strategy. Dual syntax support provides flexibility without compromising type safety.
 
 **Migration Path**: V2 MAY add `Region::auto_height()` or constraint-based layout without breaking V1 API.
 
@@ -218,19 +378,27 @@ RegionHandle<'page> (borrows from PageBuilder)
 **Principle**: The library MUST NOT panic under any documented usage pattern in release builds.
 
 **Requirements**:
-- Invalid inputs return `Result<T, LayoutError>`
-- Out-of-bounds writes are silently clipped (no panics)
+- Invalid inputs return `Result<T, LayoutError>` or `Result<T, RenderError>`
+- Out-of-bounds writes are silently clipped for PageBuilder/Region (no panics)
+- Widget violations return errors (no panics) per Principle III Widget Exception
 - Only `debug_assert!` may trigger panics (debug builds only)
 - Fuzzing MUST run 1M+ iterations without crashes
 - Property-based tests verify no panics with arbitrary inputs
 
-**Allowed Panics** (debug builds only):
-- Contract violations caught by `debug_assert!`
-- Developer misuse of private APIs (if any)
+**Allowed Panics**:
+- **Debug builds only**: `debug_assert!` for documented API constraint violations (e.g., zero-size widgets, Label HEIGHT ≠ 1)
+- **Debug builds only**: Developer misuse of private APIs (if any)
+- **Never in release builds**: All panics stripped by compiler; undefined behavior acceptable for documented constraint violations
 
-**Rationale**: Production stability for 24/7 industrial environments. Panics in embedded or critical systems are unacceptable.
+**Documented Constraint Violations** (APIs that compile but violate documented invariants):
+- `Box::<0, H>::new()` or `Box::<W, 0>::new()` - zero-size widgets (panics in debug via `debug_assert!`, undefined in release)
+- `Label::<W, H>::new()` where H ≠ 1 - multi-line labels (panics in debug via `debug_assert!`, undefined in release; developers MUST use H=1)
+- `Label::<W, 1>::new().add_text(text)` where text contains newlines (`\n`, `\r\n`) - multi-line text content (panics in debug via `debug_assert!`, undefined in release)
+- Future constraint violations added via `debug_assert!` must be documented in API rustdoc `# Panics` section
 
-**Validation**: Fuzzing with `cargo-fuzz` MUST be part of CI. Every PR MUST pass property-based panic tests.
+**Rationale**: Production stability for 24/7 industrial environments requires zero panics in release builds. Debug assertions provide development-time safety with zero production cost (per Principle VI Validation Strategy). Developers violating documented constraints in release builds accept undefined behavior risk.
+
+**Validation**: Fuzzing with `cargo-fuzz` MUST be part of CI (release build). Every PR MUST pass property-based panic tests (release build). CI MUST test both debug and release builds on Rust 1.91.1+ to verify debug_assert! behavior differs correctly.
 
 ---
 
@@ -275,13 +443,14 @@ RegionHandle<'page> (borrows from PageBuilder)
 - Pre-allocation with capacity estimates
 - Avoid allocations in tight loops
 - Row-major memory layout for cache efficiency
+- Compile-time validation eliminates runtime checks (per Principle VI Validation Strategy)
 
 **Regression Prevention**:
 - CI MUST run benchmarks on every PR
 - Performance regressions > 10% MUST be investigated
 - Flamegraphs MUST be generated for profiling
 
-**Rationale**: Ensures the library is suitable for high-throughput industrial applications (1000+ forms/day).
+**Rationale**: Ensures the library is suitable for high-throughput industrial applications (1000+ forms/day). Compile-time validation contributes to performance by eliminating runtime overhead.
 
 ---
 
@@ -305,17 +474,22 @@ RegionHandle<'page> (borrows from PageBuilder)
 - Edge cases (empty regions, zero-width/height, boundary writes)
 - Style state machine transitions
 - Region splitting calculations
+- Widget content validation (text exceeds dimensions)
+- Debug assertion behavior (verify panics in debug builds)
 
 **Integration Tests**:
 - End-to-end document rendering
 - Multi-page pagination
 - Nested region hierarchies (5+ levels)
 - All widgets in combination
+- Widget composition with error handling
+- Overlapping children detection
 
 **Property-Based Tests** (`proptest`):
-- Truncation correctness: Arbitrary strings → no overflow
+- Truncation correctness: Arbitrary strings → no overflow (PageBuilder/Region)
+- Widget validation: Arbitrary content → proper errors or success
 - Determinism: Same input → same output (1000 runs)
-- No panics: Arbitrary valid geometries → no crash
+- No panics: Arbitrary valid geometries → no crash (release builds)
 
 **Golden Master Tests**:
 - 20+ golden master files
@@ -327,7 +501,7 @@ RegionHandle<'page> (borrows from PageBuilder)
 - Alignment verification on multi-part forms
 - All widgets validated on paper
 
-**Rationale**: Comprehensive testing prevents regressions, validates correctness, and ensures production readiness.
+**Rationale**: Comprehensive testing prevents regressions, validates correctness, and ensures production readiness. Both debug and release builds must be tested to verify debug_assert! behavior.
 
 ---
 
@@ -374,6 +548,8 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Code examples in docs (compilable and tested via `cargo test --doc`)
 - Usage guidelines and edge cases documented
 - Error conditions explicitly listed
+- Validation strategy documented (compile-time vs runtime)
+- Both turbofish and macro wrapper syntaxes demonstrated in examples
 
 **Required Documentation Artifacts**:
 - **README.md**: Quickstart guide (< 5 minutes to first working example)
@@ -387,7 +563,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Examples MUST compile and run
 - `cargo doc --open` MUST produce readable documentation
 
-**Rationale**: Well-documented APIs reduce support burden, accelerate onboarding, and prevent misuse.
+**Rationale**: Well-documented APIs reduce support burden, accelerate onboarding, and prevent misuse. Documentation must explain validation strategy to help developers understand when to expect compile-time errors vs runtime errors. Demonstrating both widget construction syntaxes helps developers choose the approach that fits their style.
 
 ---
 
@@ -397,13 +573,14 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 
 **Security Requirements**:
 - Zero `unsafe` code blocks in V1 (unless absolutely necessary with justification)
-- All user inputs validated (geometry bounds checks)
+- All user inputs validated (geometry bounds checks, widget content validation)
 - No buffer overflows (prevented by Rust's bounds checking)
 - Fuzzing integrated into CI (detect crashes and memory issues)
 - Supply chain audits: `cargo audit` on every PR
 
 **Input Validation**:
-- All dimensions validated at creation time
+- All dimensions validated at creation time (prefer compile-time via const generics)
+- Widget content validated at construction (per Principle III Widget Exception)
 - Prevent integer overflow (width/height > u16::MAX)
 - Prevent denial-of-service via excessive allocations
 
@@ -412,7 +589,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Dev dependencies vetted and pinned
 - `cargo-deny` configured to reject untrusted crates
 
-**Rationale**: Security is critical for industrial and government applications. Zero dependencies and minimal `unsafe` code reduce attack surface.
+**Rationale**: Security is critical for industrial and government applications. Zero dependencies and minimal `unsafe` code reduce attack surface. Compile-time validation eliminates entire classes of runtime vulnerabilities.
 
 ---
 
@@ -441,6 +618,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - New optional features (feature-gated)
 - Documentation improvements
 - Performance optimizations (without behavior changes)
+- MSRV updates (MINOR version bump for constitution)
 
 **Rationale**: Prevents scope creep and ensures V1 remains stable and predictable.
 
@@ -460,19 +638,24 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - [ ] Determinism verified (if touching rendering code)
 - [ ] Hardware validated (if changing ESC/P output)
 - [ ] Memory usage profiled (if adding allocations)
+- [ ] Widget content validation implemented (if adding widget types)
+- [ ] Validation strategy appropriate (compile-time preferred, debug_assert! for contracts, runtime only when necessary)
+- [ ] Widget construction uses const generics (turbofish or macro syntax)
+- [ ] Compiles and tests pass on Rust 1.91.1+
 
 **Automated Checks (CI)**:
 ```yaml
-- cargo fmt --check
-- cargo clippy -- -D warnings
-- cargo test --all-features
-- cargo bench --no-run
+- cargo +1.91.1 fmt --check
+- cargo +1.91.1 clippy -- -D warnings
+- cargo +1.91.1 test --all-features
+- cargo +1.91.1 test --all-features --release  # Verify release builds
+- cargo +1.91.1 bench --no-run
 - cargo audit
 - cargo tree --depth 1 (verify zero runtime deps)
-- cargo doc --no-deps
+- cargo +1.91.1 doc --no-deps
 ```
 
-**Rationale**: Code review catches bugs, enforces standards, and maintains code quality.
+**Rationale**: Code review catches bugs, enforces standards, and maintains code quality. Validation strategy review ensures optimal performance and type safety. Rust 1.91.1 CI checks ensure MSRV compliance.
 
 ---
 
@@ -529,9 +712,15 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Complexity or deviations MUST be explicitly justified in code comments and PR descriptions
 
 **Version History**:
-- Version: 1.0.0
+- Version: 1.3.0 (Current)
 - Ratified: 2025-01-18
-- Last Amended: 2025-01-18
+- Last Amended: 2025-11-19
+- Amendment Log:
+  - 1.1.0 (2025-11-19): Added Widget Composability Exception to Principle III, allowing boundary errors for widget system while preserving silent truncation for PageBuilder/Region
+  - 1.2.0 (2025-11-19): Extended Widget Composability Exception to include text content validation; clarified widget dimensions fixed at construction time in Principle VIII
+  - 1.2.1 (2025-11-19): Added Validation Strategy subsection to Principle VI emphasizing compile-time validation preference hierarchy (compile-time → debug_assert! → runtime Result); updated Principles III, IX, XI, XII, XV, XVII to reference validation strategy
+  - 1.2.2 (2025-11-19): Added Widget Construction Syntax subsection to Principle VI documenting dual API (turbofish vs macro wrappers); updated Principle VIII with syntax examples; updated Principle XIV to require both syntaxes in documentation; updated Principle XVII code review checklist
+  - 1.3.0 (2025-11-19): Updated MSRV from Rust 1.75.0 to Rust 1.91.1; updated Principle I (determinism across compiler versions), Principle VI (MSRV specification, validation rationale, CI requirements), Principle IX (CI testing requirements), Principle XVI (MSRV updates policy), Principle XVII (CI checks with version); added propagation requirements for Cargo.toml, specs, and documentation
 
 ---
 
