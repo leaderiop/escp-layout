@@ -1,6 +1,6 @@
 //! Golden master tests for ESC/P output validation
 
-use escp_layout::{Document, Page, Region, StyleFlags};
+use escp_layout::{Document, Page, StyleFlags};
 use std::fs;
 use std::path::PathBuf;
 
@@ -21,8 +21,8 @@ fn generate_invoice() -> Vec<u8> {
     page_builder.write_str(60, 1, "Date: 2025-11-18", StyleFlags::NONE);
 
     // Separator
-    let sep = Region::new(0, 3, 80, 1).unwrap();
-    page_builder.fill_region(sep, '=', StyleFlags::NONE);
+    let sep = "=".repeat(80);
+    page_builder.write_str(0, 3, &sep, StyleFlags::NONE);
 
     // Body
     page_builder.write_str(0, 5, "BILL TO:", StyleFlags::BOLD);
@@ -35,8 +35,8 @@ fn generate_invoice() -> Vec<u8> {
         "QTY  DESCRIPTION                  PRICE      TOTAL",
         StyleFlags::BOLD,
     );
-    let item_sep = Region::new(0, 10, 60, 1).unwrap();
-    page_builder.fill_region(item_sep, '-', StyleFlags::NONE);
+    let item_sep = "-".repeat(60);
+    page_builder.write_str(0, 10, &item_sep, StyleFlags::NONE);
 
     page_builder.write_str(
         0,
@@ -51,13 +51,13 @@ fn generate_invoice() -> Vec<u8> {
         StyleFlags::NONE,
     );
 
-    let total_sep = Region::new(0, 13, 60, 1).unwrap();
-    page_builder.fill_region(total_sep, '-', StyleFlags::NONE);
+    let total_sep = "-".repeat(60);
+    page_builder.write_str(0, 13, &total_sep, StyleFlags::NONE);
     page_builder.write_str(40, 14, "TOTAL:  $600.00", StyleFlags::BOLD);
 
     // Footer
-    let footer_sep = Region::new(0, 48, 80, 1).unwrap();
-    page_builder.fill_region(footer_sep, '=', StyleFlags::NONE);
+    let footer_sep = "=".repeat(80);
+    page_builder.write_str(0, 48, &footer_sep, StyleFlags::NONE);
     page_builder.write_str(0, 49, "Thank you for your business!", StyleFlags::BOLD);
 
     let page = page_builder.build();
@@ -202,8 +202,8 @@ fn test_styled_invoice_golden() {
     page_builder.write_str(0, 1, "ACME CORPORATION", StyleFlags::BOLD);
 
     // Separator
-    let sep = Region::new(0, 3, 80, 1).unwrap();
-    page_builder.fill_region(sep, '=', StyleFlags::NONE);
+    let sep = "=".repeat(80);
+    page_builder.write_str(0, 3, &sep, StyleFlags::NONE);
 
     // Body content
     page_builder.write_str(0, 5, "BILL TO:", StyleFlags::BOLD);
@@ -234,8 +234,8 @@ fn test_styled_invoice_golden() {
     page_builder.write_str(0, 15, "TOTAL: $600.00", StyleFlags::BOLD.with_underline());
 
     // Footer with underline
-    let footer_sep = Region::new(0, 48, 80, 1).unwrap();
-    page_builder.fill_region(footer_sep, '-', StyleFlags::NONE);
+    let footer_sep = "-".repeat(80);
+    page_builder.write_str(0, 48, &footer_sep, StyleFlags::NONE);
     page_builder.write_str(0, 49, "Thank you for your business!", StyleFlags::UNDERLINE);
 
     let page = page_builder.build();

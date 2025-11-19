@@ -38,6 +38,7 @@ Amendment Date: 2025-11-19
 **Principle**: The library MUST produce byte-for-byte identical ESC/P output for identical inputs across all platforms, compiler versions (Rust 1.91.1+), and execution environments.
 
 **Requirements**:
+
 - Same `Document` input → Identical ESC/P byte stream output
 - No timestamps, UUIDs, or random values in rendering pipeline
 - No HashMap iteration (use Vec/BTreeMap for stable ordering)
@@ -56,6 +57,7 @@ Amendment Date: 2025-11-19
 **Principle**: The V1 specification is frozen and MUST NOT be changed without explicit architectural review and approval.
 
 **Fixed Constraints**:
+
 - Page dimensions: 160 columns × 51 lines (EPSON LQ-2090II condensed mode)
 - ASCII-only output (characters 32-126)
 - ESC/P text mode only (no bitmap/graphics modes)
@@ -64,9 +66,10 @@ Amendment Date: 2025-11-19
 - Fixed truncation rules (horizontal and vertical)
 
 **Prohibited in V1**:
+
 - Dynamic page sizing
 - Automatic pagination
-- Auto-layout algorithms (flexbox-like systems)
+- Auto-layout algorithms (flexrect-like systems)
 - Unicode text shaping or bidirectional text
 - Graphics modes (bitmap, raster, vector)
 - Runtime configuration of page dimensions
@@ -82,6 +85,7 @@ Amendment Date: 2025-11-19
 **Principle**: All content overflow MUST be silently truncated. Truncation is NOT an error condition and MUST NOT produce warnings or panics.
 
 **Truncation Rules**:
+
 - **Horizontal truncation**: Content beyond region width is dropped character-by-character
 - **Vertical truncation**: Lines beyond region height are discarded line-by-line
 - **Page boundary truncation**: Writes outside (160×51) bounds are silently ignored
@@ -89,6 +93,7 @@ Amendment Date: 2025-11-19
 - **No panics**: Overflow MUST NOT trigger panics in release builds
 
 **Implementation**:
+
 ```rust
 // ✅ Correct: Silent truncation (PageBuilder, Region)
 if x >= width || y >= height {
@@ -105,12 +110,14 @@ if x >= width {
 The widget composability system (feature 002) is **exempt** from silent truncation rules and MUST return `Result<(), RenderError>` for violations:
 
 - **Boundary violations during composition**: `parent.add_child(child, pos)` returns errors for:
+
   - Child widget exceeds parent bounds (`ChildExceedsParent`)
   - Out-of-bounds positioning (`OutOfBounds`)
   - Zero-size parent widget (`ZeroSizeParent`)
   - Overlapping children (`OverlappingChildren`)
 
 - **Content validation at widget construction**: Widget constructors return errors for:
+
   - Text content exceeding widget dimensions (e.g., `Label::<WIDTH, HEIGHT>::new(text)` where `text.len() > WIDTH` returns `Err(TextExceedsWidth)`)
   - Invalid content that cannot fit within declared widget bounds
 
@@ -119,13 +126,14 @@ The widget composability system (feature 002) is **exempt** from silent truncati
   - Content positioning violations
 
 **Validation Strategy** (Added 2025-11-19):
+
 - **Prefer compile-time validation**: Use const generics and type system to prevent invalid states
 - **Use debug_assert!**: For development-time contract checks (zero runtime cost in release builds)
 - **Runtime Result errors**: Only when compile-time validation is impossible (e.g., text length checks)
 
 **Rationale**: Widget boundary and content errors enable developers to detect layout bugs early and handle violations gracefully, supporting the composition mental model where parent-child relationships and content sizing have explicit safety contracts. Silent truncation remains for PageBuilder/Region to match hardware reality.
 
-**Scope limitation**: This exception applies ONLY to `Widget` trait implementations, `RenderContext`, and widget constructors (Label, Box, etc.). Underlying `PageBuilder` and `Region` APIs maintain silent truncation.
+**Scope limitation**: This exception applies ONLY to `Widget` trait implementations, `RenderContext`, and widget constructors (Label, Rect, etc.). Underlying `PageBuilder` and `Region` APIs maintain silent truncation.
 
 **Testing**: Property-based tests MUST verify zero panics with arbitrary out-of-bounds inputs for PageBuilder/Region. Widget tests MUST verify `Result::Err` for boundary and content violations.
 
@@ -136,6 +144,7 @@ The widget composability system (feature 002) is **exempt** from silent truncati
 **Principle**: Finalized `Document` objects MUST be immutable and thread-safe (`Send + Sync`).
 
 **Requirements**:
+
 - `DocumentBuilder::build()` consumes the builder and returns immutable `Document`
 - No public mutable methods on `Document`
 - Rendering operates on `&Document` (shared reference only)
@@ -143,6 +152,7 @@ The widget composability system (feature 002) is **exempt** from silent truncati
 - No interior mutability (`RefCell`, `Mutex`) in `Document`
 
 **Lifecycle**:
+
 ```
 DocumentBuilder (mutable)
     ↓ .build()
@@ -162,6 +172,7 @@ Vec<u8> (ESC/P bytes)
 **Principle**: The library MUST generate valid ESC/P text-mode commands compatible with EPSON LQ-2090II and equivalent printers.
 
 **Supported ESC/P Commands**:
+
 - `ESC @` (0x1B 0x40): Printer reset
 - `SI` (0x0F): Condensed mode (12 CPI)
 - `ESC E` / `ESC F` (0x1B 0x45 / 0x1B 0x46): Bold on/off
@@ -170,12 +181,14 @@ Vec<u8> (ESC/P bytes)
 - `FF` (0x0C): Form feed (page separator)
 
 **Prohibited Commands**:
+
 - Bitmap/raster graphics commands (`ESC *`, `ESC K`)
 - Vector graphics commands
 - Font download commands
 - Any graphics-mode sequences
 
 **Character Handling**:
+
 - Non-ASCII characters (value > 127) MUST be replaced with `'?'` (0x3F)
 - ASCII printable range: 32-126
 
@@ -192,6 +205,7 @@ Vec<u8> (ESC/P bytes)
 **Minimum Supported Rust Version (MSRV)**: **1.91.1** (stable channel, 2021 edition)
 
 **Lifetime Hierarchy**:
+
 ```
 DocumentBuilder (owns data)
     ↓ lifetime 'doc
@@ -201,6 +215,7 @@ RegionHandle<'page> (borrows from PageBuilder)
 ```
 
 **API Contracts**:
+
 - Builder pattern consumes on `build()` to prevent reuse
 - Method chaining via `&mut Self` returns for ergonomics
 - Lifetimes prevent dangling references at compile-time
@@ -208,6 +223,7 @@ RegionHandle<'page> (borrows from PageBuilder)
 - No `unsafe` code in public API
 
 **Error Handling**:
+
 - Geometry errors return `Result<T, LayoutError>`
 - Content overflow silently truncates for PageBuilder/Region (no errors)
 - Widget content validation returns `Result<T, RenderError>` per Principle III Widget Exception
@@ -218,28 +234,31 @@ RegionHandle<'page> (borrows from PageBuilder)
 The library provides **two equivalent syntaxes** for widget construction, both leveraging const generics for compile-time type safety:
 
 **1. Turbofish Syntax** (Direct const generic instantiation):
+
 ```rust
 // Widget creation with explicit const generics
-let container = Box::<80, 30>::new();
+let container = Rect::<80, 30>::new();
 let label = Label::<20, 1>::new("Hello")?;
 
 // Layout component creation
 let column = Column::<80, 30>::new();
-let (box1, pos1) = column.area::<10>()?;
+let (rect1, pos1) = column.area::<10>()?;
 ```
 
 **2. Macro Wrapper Syntax** (Ergonomic alternative):
+
 ```rust
 // Macro wrappers expand to turbofish syntax at compile time
-let container = box_new!(80, 30);
+let container = rect_new!(80, 30);
 let label = label_new!("Hello", 20, 1)?;
 
 // Layout component macros
 let column = column_new!(80, 30);
-let (box1, pos1) = column_area!(column, 10)?;
+let (rect1, pos1) = column_area!(column, 10)?;
 ```
 
 **Macro Design Principles**:
+
 - Macros MUST expand to turbofish syntax (zero abstraction overhead)
 - Both syntaxes are officially supported and equivalent
 - Macros provide ergonomic benefits without sacrificing type safety
@@ -253,13 +272,16 @@ let (box1, pos1) = column_area!(column, 10)?;
 The library MUST prioritize compile-time validation over runtime validation to minimize overhead and maximize type safety:
 
 **Validation Hierarchy** (prefer in order):
+
 1. **Compile-time validation** (preferred):
-   - Const generics for dimensions: `Box<WIDTH, HEIGHT>`, `Label<WIDTH, 1>`
+
+   - Const generics for dimensions: `Rect<WIDTH, HEIGHT>`, `Label<WIDTH, 1>`
    - Type system constraints via trait bounds
    - Lifetime constraints preventing invalid usage
    - Zero runtime cost, errors caught at compile-time
 
 2. **Development-time assertions** (debug builds only):
+
    - `debug_assert!` for contract violations and invariant checks
    - Examples: non-zero dimensions, valid coordinate ranges
    - Zero cost in release builds (stripped by compiler)
@@ -272,9 +294,10 @@ The library MUST prioritize compile-time validation over runtime validation to m
    - Document clearly in API why runtime check is necessary
 
 **Application Examples**:
+
 ```rust
 // ✅ Preferred: Compile-time validation via const generics
-impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
+impl<const WIDTH: u16, const HEIGHT: u16> Rect<WIDTH, HEIGHT> {
     pub fn new() -> Self {
         // Compile error if WIDTH or HEIGHT are 0
     }
@@ -306,11 +329,13 @@ pub fn new(text: &str) -> Result<Self, RenderError> {
 **Principle**: The library MUST have zero required runtime dependencies beyond Rust `std`.
 
 **Allowed Dependencies**:
+
 - **Runtime**: None (only Rust `std`)
 - **Optional (feature-gated)**: `serde` for serialization support
 - **Dev dependencies**: `criterion`, `proptest`, `libfuzzer-sys`
 
 **Prohibited**:
+
 - Required external crates at runtime
 - C/C++ FFI dependencies
 - Network-calling dependencies
@@ -327,6 +352,7 @@ pub fn new(text: &str) -> Result<Self, RenderError> {
 **Principle**: All layout dimensions MUST be specified explicitly by the developer at construction time. No auto-sizing or dynamic layout in V1.
 
 **Requirements**:
+
 - Regions have fixed `(x, y, width, height)` specified by developer
 - Widget dimensions fixed at construction time (via const generics or constructor parameters)
 - No content-based auto-sizing
@@ -339,28 +365,31 @@ pub fn new(text: &str) -> Result<Self, RenderError> {
 Widget dimensions MUST be specified at construction time using **const generics** with either turbofish syntax or macro wrappers:
 
 **Turbofish Syntax**:
+
 ```rust
 // Widget construction with explicit dimensions
-let container = Box::<80, 30>::new();
+let container = Rect::<80, 30>::new();
 let label = Label::<20, 1>::new("text")?;
 
 // Layout component usage
 let column = Column::<80, 30>::new();
-let (nested_box, pos) = column.area::<10>()?;  // Returns Box<80, 10>
+let (nested_rect, pos) = column.area::<10>()?;  // Returns Rect<80, 10>
 ```
 
 **Macro Wrapper Syntax**:
+
 ```rust
 // Equivalent macro-based construction
-let container = box_new!(80, 30);
+let container = rect_new!(80, 30);
 let label = label_new!("text", 20, 1)?;
 
 // Layout component macros
 let column = column_new!(80, 30);
-let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
+let (nested_rect, pos) = column_area!(column, 10)?;  // Returns Rect<80, 10>
 ```
 
 **Dimension Requirements**:
+
 - All dimensions known at compile-time before widget tree traversal
 - Both turbofish and macro syntaxes are officially supported and equivalent
 - Developers MAY choose either syntax based on preference
@@ -378,6 +407,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 **Principle**: The library MUST NOT panic under any documented usage pattern in release builds.
 
 **Requirements**:
+
 - Invalid inputs return `Result<T, LayoutError>` or `Result<T, RenderError>`
 - Out-of-bounds writes are silently clipped for PageBuilder/Region (no panics)
 - Widget violations return errors (no panics) per Principle III Widget Exception
@@ -386,12 +416,14 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 - Property-based tests verify no panics with arbitrary inputs
 
 **Allowed Panics**:
+
 - **Debug builds only**: `debug_assert!` for documented API constraint violations (e.g., zero-size widgets, Label HEIGHT ≠ 1)
 - **Debug builds only**: Developer misuse of private APIs (if any)
 - **Never in release builds**: All panics stripped by compiler; undefined behavior acceptable for documented constraint violations
 
 **Documented Constraint Violations** (APIs that compile but violate documented invariants):
-- `Box::<0, H>::new()` or `Box::<W, 0>::new()` - zero-size widgets (panics in debug via `debug_assert!`, undefined in release)
+
+- `Rect::<0, H>::new()` or `Rect::<W, 0>::new()` - zero-size widgets (panics in debug via `debug_assert!`, undefined in release)
 - `Label::<W, H>::new()` where H ≠ 1 - multi-line labels (panics in debug via `debug_assert!`, undefined in release; developers MUST use H=1)
 - `Label::<W, 1>::new().add_text(text)` where text contains newlines (`\n`, `\r\n`) - multi-line text content (panics in debug via `debug_assert!`, undefined in release)
 - Future constraint violations added via `debug_assert!` must be documented in API rustdoc `# Panics` section
@@ -407,17 +439,20 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 **Principle**: Memory usage MUST be predictable, bounded, and minimal.
 
 **Targets**:
+
 - Page model: ≤ 16 KB per page (160 × 51 × 2 bytes)
 - Document overhead: < 1 MB regardless of page count (for reasonable documents)
 - Rendering MUST NOT allocate during cell-writing loops
 - Zero-copy rendering where possible
 
 **Memory Layout**:
+
 - Row-major cell storage: `cells[y][x]` for cache-friendly iteration
 - Bit-packed style storage (1 byte per cell)
-- Box allocation for page data (avoid stack overflow)
+- Rect allocation for page data (avoid stack overflow)
 
 **Profiling Requirements**:
+
 - Memory profiling with `heaptrack` or `valgrind --tool=massif`
 - Benchmarks MUST track memory usage over time
 - PRs MUST NOT regress memory usage by > 10%
@@ -439,6 +474,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 | Page allocation | < 10 μs | `criterion` |
 
 **Optimization Strategies**:
+
 - Inline hints for hot path (`#[inline]`)
 - Pre-allocation with capacity estimates
 - Avoid allocations in tight loops
@@ -446,6 +482,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 - Compile-time validation eliminates runtime checks (per Principle VI Validation Strategy)
 
 **Regression Prevention**:
+
 - CI MUST run benchmarks on every PR
 - Performance regressions > 10% MUST be investigated
 - Flamegraphs MUST be generated for profiling
@@ -461,6 +498,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 **Principle**: All code MUST be tested with unit, integration, property-based, and hardware validation tests.
 
 **Coverage Targets**:
+
 - Unit test coverage: ≥ 90% line coverage
 - Public API coverage: 100%
 - Integration tests: Minimum 50 scenarios
@@ -470,6 +508,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 **Test Categories**:
 
 **Unit Tests**:
+
 - All public API functions
 - Edge cases (empty regions, zero-width/height, boundary writes)
 - Style state machine transitions
@@ -478,6 +517,7 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 - Debug assertion behavior (verify panics in debug builds)
 
 **Integration Tests**:
+
 - End-to-end document rendering
 - Multi-page pagination
 - Nested region hierarchies (5+ levels)
@@ -486,17 +526,20 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 - Overlapping children detection
 
 **Property-Based Tests** (`proptest`):
+
 - Truncation correctness: Arbitrary strings → no overflow (PageBuilder/Region)
 - Widget validation: Arbitrary content → proper errors or success
 - Determinism: Same input → same output (1000 runs)
 - No panics: Arbitrary valid geometries → no crash (release builds)
 
 **Golden Master Tests**:
+
 - 20+ golden master files
 - SHA-256 hash verification
 - Byte-level ESC/P output comparison
 
 **Hardware Validation** (EPSON LQ-2090II):
+
 - 10 test forms printed and visually inspected
 - Alignment verification on multi-part forms
 - All widgets validated on paper
@@ -514,21 +557,25 @@ let (nested_box, pos) = column_area!(column, 10)?;  // Returns Box<80, 10>
 **Version Format**: `MAJOR.MINOR.PATCH`
 
 **Versioning Rules**:
+
 - **MAJOR**: Breaking API changes, removed public APIs
 - **MINOR**: Backward-compatible new features, new public APIs
 - **PATCH**: Backward-compatible bug fixes
 
 **Deprecation Policy**:
+
 - Deprecated APIs MUST emit warnings for ≥ 1 minor version
 - Migration path MUST be documented in deprecation message
 - Removal requires MAJOR version bump
 
 **API Stability Guarantees** (V1.x.x):
+
 - Public API frozen except for additions
 - ESC/P output format stable (byte-level compatibility)
 - No breaking changes within 1.x.x series
 
 **Example**:
+
 ```rust
 #[deprecated(since = "1.2.0", note = "Use `split_horizontal_equal()` instead")]
 pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
@@ -543,6 +590,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Principle**: All public APIs MUST have comprehensive rustdoc documentation with examples.
 
 **Documentation Standards**:
+
 - 100% public API rustdoc coverage
 - Every public function has `///` comments
 - Code examples in docs (compilable and tested via `cargo test --doc`)
@@ -552,6 +600,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Both turbofish and macro wrapper syntaxes demonstrated in examples
 
 **Required Documentation Artifacts**:
+
 - **README.md**: Quickstart guide (< 5 minutes to first working example)
 - **API Specification**: Complete public API reference
 - **User Guides**: Tutorials for beginners, intermediate, and advanced users
@@ -559,6 +608,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - **Troubleshooting Guide**: Common issues and solutions
 
 **Validation**:
+
 - CI MUST run `cargo doc --no-deps && cargo deadlinks`
 - Examples MUST compile and run
 - `cargo doc --open` MUST produce readable documentation
@@ -572,6 +622,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Principle**: The library MUST minimize security risks and unsafe code.
 
 **Security Requirements**:
+
 - Zero `unsafe` code blocks in V1 (unless absolutely necessary with justification)
 - All user inputs validated (geometry bounds checks, widget content validation)
 - No buffer overflows (prevented by Rust's bounds checking)
@@ -579,12 +630,14 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - Supply chain audits: `cargo audit` on every PR
 
 **Input Validation**:
+
 - All dimensions validated at creation time (prefer compile-time via const generics)
 - Widget content validated at construction (per Principle III Widget Exception)
 - Prevent integer overflow (width/height > u16::MAX)
 - Prevent denial-of-service via excessive allocations
 
 **Supply Chain Security**:
+
 - Zero runtime dependencies (minimize attack surface)
 - Dev dependencies vetted and pinned
 - `cargo-deny` configured to reject untrusted crates
@@ -600,6 +653,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Principle**: All changes to specifications MUST be validated against the frozen V1 spec before implementation.
 
 **Validation Process**:
+
 1. **Proposal**: Changes proposed via GitHub issue or RFC
 2. **Specification Review**: Check against frozen V1 constraints
 3. **Impact Analysis**: Document affected components, APIs, tests
@@ -608,12 +662,14 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 6. **Validation**: All tests (unit, integration, hardware) MUST pass
 
 **Prohibited Changes Without Major Version Bump**:
+
 - Breaking public API changes
 - Changes to ESC/P output format
 - Changes to determinism guarantees
 - Changes to fixed layout constraints
 
 **Allowed Changes (Minor/Patch)**:
+
 - Bug fixes that don't change output
 - New optional features (feature-gated)
 - Documentation improvements
@@ -629,6 +685,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Principle**: All code changes MUST pass rigorous code review before merging.
 
 **Review Checklist**:
+
 - [ ] Follows Rust API guidelines
 - [ ] No `unsafe` code (or justified with safety invariants)
 - [ ] All public APIs documented with rustdoc
@@ -644,11 +701,12 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - [ ] Compiles and tests pass on Rust 1.91.1+
 
 **Automated Checks (CI)**:
+
 ```yaml
 - cargo +1.91.1 fmt --check
 - cargo +1.91.1 clippy -- -D warnings
 - cargo +1.91.1 test --all-features
-- cargo +1.91.1 test --all-features --release  # Verify release builds
+- cargo +1.91.1 test --all-features --release # Verify release builds
 - cargo +1.91.1 bench --no-run
 - cargo audit
 - cargo tree --depth 1 (verify zero runtime deps)
@@ -666,6 +724,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Principle**: V1 architecture MUST NOT prevent future V2+ features, but V2 planning MUST NOT compromise V1 delivery.
 
 **V2 Candidate Features** (NOT in V1):
+
 - Automatic page breaks and pagination
 - Dynamic-height regions (content-based sizing)
 - Constraint-based layout system
@@ -676,12 +735,14 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 - `no_std` support for embedded systems
 
 **V1 → V2 Migration Path**:
+
 - V1 API remains available (backward compatibility)
 - V2 features introduced via new APIs or feature flags
 - Clear migration guide provided
 - Automated migration tools where possible
 
 **Design Constraints for V1** (to enable V2):
+
 - Avoid patterns that prevent dynamic layout extension
 - Keep rendering logic pure and composable
 - Modular architecture allows adding features without rewrites
@@ -695,11 +756,13 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 ### Authority and Amendment Process
 
 **Constitution Authority**:
+
 - This constitution supersedes all other development practices and guidelines
 - All PRs, code reviews, and architectural decisions MUST comply with this constitution
 - Violations MUST be flagged and resolved before merge
 
 **Amendment Procedure**:
+
 1. **Proposal**: Amendments proposed via GitHub issue with `constitution-amendment` label
 2. **Discussion**: Open discussion period (minimum 7 days)
 3. **Approval**: Requires approval from project maintainer
@@ -707,11 +770,13 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 5. **Migration Plan**: If breaking changes, migration guide MUST be provided
 
 **Compliance Review**:
+
 - All PRs MUST verify compliance with this constitution
 - Quarterly constitution audits to verify adherence
 - Complexity or deviations MUST be explicitly justified in code comments and PR descriptions
 
 **Version History**:
+
 - Version: 1.3.0 (Current)
 - Ratified: 2025-01-18
 - Last Amended: 2025-11-19
@@ -729,6 +794,7 @@ pub fn split_equal(&mut self, count: u16) -> Result<...> { ... }
 **Responsibility**: All contributors, reviewers, and maintainers are responsible for upholding this constitution.
 
 **Violation Response**:
+
 1. **Detection**: Violations flagged during code review or CI
 2. **Resolution**: PR author MUST address violations before merge
 3. **Escalation**: Repeated or severe violations escalated to project maintainer

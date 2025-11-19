@@ -9,12 +9,12 @@
 //! # Quick Start
 //!
 //! ```rust
-//! use escp_layout::widget::{Box, Label, box_new, label_new};
+//! use escp_layout::widget::{Rect, Label, rect_new, label_new};
 //! use escp_layout::Page;
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create root container (80×30)
-//! let mut root = box_new!(80, 30);
+//! let mut root = rect_new!(80, 30);
 //!
 //! // Add a label
 //! let label = label_new!(20).add_text("Hello World")?;
@@ -27,7 +27,7 @@
 //! # }
 //! ```
 
-mod box_widget;
+mod rect;
 mod context;
 mod label;
 pub mod layout;
@@ -46,11 +46,11 @@ pub use error::RenderError;
 mod error;
 
 // Re-export widgets
-pub use box_widget::Box;
+pub use rect::Rect;
 pub use label::Label;
 
 // Re-export macros
-pub use box_widget::box_new;
+pub use rect::rect_new;
 pub use label::label_new;
 
 // Re-export layout components (will be added in Phase 5)
@@ -65,7 +65,7 @@ pub use layout::{column_area, column_new, row_area, row_new, stack_new, Column, 
 /// # Type Safety
 ///
 /// Dimensions are specified at the type level using const generics. For example,
-/// `Box<80, 30>` is a different type from `Box<40, 15>`, enabling compile-time
+/// `Rect<80, 30>` is a different type from `Rect<40, 15>`, enabling compile-time
 /// validation.
 ///
 /// # Validation Hierarchy
@@ -79,15 +79,15 @@ pub use layout::{column_area, column_new, row_area, row_new, stack_new, Column, 
 /// # Examples
 ///
 /// ```rust
-/// use escp_layout::widget::{Widget, Box, Label, RenderContext, box_new, label_new};
+/// use escp_layout::widget::{Widget, Rect, Label, RenderContext, rect_new, label_new};
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// // Turbofish syntax
-/// let container = Box::<80, 30>::new();
+/// let container = Rect::<80, 30>::new();
 /// let label = Label::<20, 1>::new().add_text("Hello")?;
 ///
 /// // Macro syntax (ergonomic)
-/// let container = box_new!(80, 30);
+/// let container = rect_new!(80, 30);
 /// let label = label_new!(20).add_text("Hello")?;
 /// # Ok(())
 /// # }

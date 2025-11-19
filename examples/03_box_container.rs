@@ -1,31 +1,47 @@
-//! Example 3: Box Container Widget
+//! Example 3: Rect Container Widget
 //!
 //! Demonstrates:
-//! - Creating box containers with different sizes
-//! - Adding multiple children to a box
+//! - Creating rect containers with different sizes
+//! - Adding multiple children to a rect
 //! - Positioning children with explicit coordinates
 //! - Boundary validation and error handling
 
-use escp_layout::widget::{box_new, label_new};
+use escp_layout::widget::{rect_new, label_new};
 use escp_layout::Page;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("=== Example 3: Box Container Widget ===\n");
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
-    // Example 3.1: Simple box with one child
-    println!("3.1 Simple Box with One Child:");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("=== Example 3: Rect Container Widget ===\n");
+
+    // Example 3.1: Simple rect with one child
+    println!("3.1 Simple Rect with One Child:");
     {
-        let mut container = box_new!(40, 20);
-        let label = label_new!(15).add_text("Inside Box")?;
+        let mut container = rect_new!(40, 20);
+        let label = label_new!(15).add_text("Inside Rect")?;
         container.add_child(label, (5, 3))?;
 
-        println!("  ✓ Created 40×20 box with label at (5, 3)\n");
+        println!("  ✓ Created 40×20 rect with label at (5, 3)\n");
     }
 
-    // Example 3.2: Box with multiple children at different positions
+    // Example 3.2: Rect with multiple children at different positions
     println!("3.2 Multiple Children:");
     {
-        let mut container = box_new!(60, 30);
+        let mut container = rect_new!(60, 30);
 
         let label1 = label_new!(20).add_text("Top Left")?;
         let label2 = label_new!(20).add_text("Middle")?;
@@ -35,13 +51,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         container.add_child(label2, (20, 10))?;
         container.add_child(label3, (40, 25))?;
 
-        println!("  ✓ Created box with 3 labels at different positions\n");
+        println!("  ✓ Created rect with 3 labels at different positions\n");
     }
 
     // Example 3.3: Adjacent children (touching edges - allowed)
     println!("3.3 Adjacent Children (Touching Edges):");
     {
-        let mut container = box_new!(80, 30);
+        let mut container = rect_new!(80, 30);
 
         let label1 = label_new!(20).add_text("Label 1")?;
         let label2 = label_new!(20).add_text("Label 2")?;
@@ -57,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 3.4: Grid of labels
     println!("3.4 Grid of Labels:");
     {
-        let mut container = box_new!(80, 30);
+        let mut container = rect_new!(80, 30);
 
         // Create a 4×3 grid
         for row in 0..3 {
@@ -74,10 +90,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 3.5: Error handling - child exceeds parent
     println!("3.5 Error Handling - Child Too Large:");
     {
-        let mut small_box = box_new!(20, 20);
+        let mut small_rect = rect_new!(20, 20);
         let big_label = label_new!(30).add_text("Too wide!")?;
 
-        let result = small_box.add_child(big_label, (0, 0));
+        let result = small_rect.add_child(big_label, (0, 0));
         match result {
             Err(e) => println!("  ✓ Correctly rejected oversized child: {}\n", e),
             Ok(_) => println!("  ✗ Should have rejected oversized child!\n"),
@@ -87,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 3.6: Error handling - overlapping children
     println!("3.6 Error Handling - Overlapping Children:");
     {
-        let mut container = box_new!(80, 30);
+        let mut container = rect_new!(80, 30);
 
         let label1 = label_new!(20).add_text("Label 1")?;
         let label2 = label_new!(20).add_text("Label 2")?;
@@ -104,9 +120,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 3.7: Full render
     println!("3.7 Full Render:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
 
-        let label1 = label_new!(30).add_text("Box Container Example")?;
+        let label1 = label_new!(30).add_text("Rect Container Example")?;
         let label2 = label_new!(40).add_text("Multiple children positioned correctly")?;
 
         root.add_child(label1, (10, 5))?;
@@ -118,8 +134,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let cell = page.get_cell(10, 5).unwrap();
         println!("  ✓ Rendered successfully, cell at (10, 5): '{}'", cell.character());
+
+        // Print visual output
+        println!("\n  Rendered Output (40×20):");
+        print_page(&page, 40, 20);
     }
 
-    println!("\n=== Box Container Example Complete ===");
+    println!("\n=== Rect Container Example Complete ===");
     Ok(())
 }

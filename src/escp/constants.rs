@@ -26,3 +26,7 @@ pub const LF: u8 = 0x0A;
 
 /// FF - Form feed (page separator)
 pub const FF: u8 = 0x0C;
+
+/// ESC C n - Set page length to n lines (1-127)
+/// For EPSON LQ-2090II: 50 lines per page
+pub const ESC_PAGE_LENGTH_50: &[u8] = &[0x1B, 0x43, 50];

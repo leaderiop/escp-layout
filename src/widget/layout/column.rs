@@ -1,10 +1,10 @@
 //! Column layout component for vertical division.
 
-use crate::widget::{Box, RenderError};
+use crate::widget::{Rect, RenderError};
 
-/// Layout component that divides parent Box vertically.
+/// Layout component that divides parent Rect vertically.
 ///
-/// Returns nested Box widgets for each row with compile-time dimensions
+/// Returns nested Rect widgets for each row with compile-time dimensions
 /// specified via turbofish syntax.
 ///
 /// # Examples
@@ -14,8 +14,8 @@ use crate::widget::{Box, RenderError};
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut column = column_new!(80, 30);
-/// let (row1, pos1) = column_area!(column, 10)?;  // Box<80, 10>
-/// let (row2, pos2) = column_area!(column, 20)?;  // Box<80, 20>
+/// let (row1, pos1) = column_area!(column, 10)?;  // Rect<80, 10>
+/// let (row2, pos2) = column_area!(column, 20)?;  // Rect<80, 20>
 /// # Ok(())
 /// # }
 /// ```
@@ -39,7 +39,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
 
     /// Allocate a horizontal area (row) with specified height via const generic.
     ///
-    /// Returns a Box<WIDTH, H> positioned at the next available Y offset.
+    /// Returns a Rect<WIDTH, H> positioned at the next available Y offset.
     ///
     /// # Errors
     ///
@@ -53,11 +53,11 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
     ///
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut column = Column::<80, 30>::new();
-    /// let (box1, pos1) = column.area::<10>()?; // Returns Box<80, 10>
+    /// let (rect1, pos1) = column.area::<10>()?; // Returns Rect<80, 10>
     /// # Ok(())
     /// # }
     /// ```
-    pub fn area<const H: u16>(&mut self) -> Result<(Box<WIDTH, H>, (u16, u16)), RenderError> {
+    pub fn area<const H: u16>(&mut self) -> Result<(Rect<WIDTH, H>, (u16, u16)), RenderError> {
         if self.current_y + H > HEIGHT {
             return Err(RenderError::InsufficientSpace {
                 available: HEIGHT - self.current_y,
@@ -67,11 +67,11 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
         }
 
         let position = (0, self.current_y);
-        let box_widget = Box::<WIDTH, H>::new();
+        let rect_widget = Rect::<WIDTH, H>::new();
 
         self.current_y += H;
 
-        Ok((box_widget, position))
+        Ok((rect_widget, position))
     }
 }
 

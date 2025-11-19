@@ -1,10 +1,10 @@
 //! Row layout component for horizontal division.
 
-use crate::widget::{Box, RenderError};
+use crate::widget::{Rect, RenderError};
 
-/// Layout component that divides parent Box horizontally.
+/// Layout component that divides parent Rect horizontally.
 ///
-/// Returns nested Box widgets for each column with compile-time dimensions
+/// Returns nested Rect widgets for each column with compile-time dimensions
 /// specified via turbofish syntax.
 ///
 /// # Examples
@@ -14,8 +14,8 @@ use crate::widget::{Box, RenderError};
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let mut row = row_new!(80, 30);
-/// let (col1, pos1) = row_area!(row, 20)?;  // Box<20, 30>
-/// let (col2, pos2) = row_area!(row, 60)?;  // Box<60, 30>
+/// let (col1, pos1) = row_area!(row, 20)?;  // Rect<20, 30>
+/// let (col2, pos2) = row_area!(row, 60)?;  // Rect<60, 30>
 /// # Ok(())
 /// # }
 /// ```
@@ -39,7 +39,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
 
     /// Allocate a vertical area (column) with specified width via const generic.
     ///
-    /// Returns a Box<W, HEIGHT> positioned at the next available X offset.
+    /// Returns a Rect<W, HEIGHT> positioned at the next available X offset.
     ///
     /// # Errors
     ///
@@ -53,11 +53,11 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
     ///
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut row = Row::<80, 30>::new();
-    /// let (box1, pos1) = row.area::<20>()?; // Returns Box<20, 30>
+    /// let (rect1, pos1) = row.area::<20>()?; // Returns Rect<20, 30>
     /// # Ok(())
     /// # }
     /// ```
-    pub fn area<const W: u16>(&mut self) -> Result<(Box<W, HEIGHT>, (u16, u16)), RenderError> {
+    pub fn area<const W: u16>(&mut self) -> Result<(Rect<W, HEIGHT>, (u16, u16)), RenderError> {
         if self.current_x + W > WIDTH {
             return Err(RenderError::InsufficientSpace {
                 available: WIDTH - self.current_x,
@@ -67,11 +67,11 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
         }
 
         let position = (self.current_x, 0);
-        let box_widget = Box::<W, HEIGHT>::new();
+        let rect_widget = Rect::<W, HEIGHT>::new();
 
         self.current_x += W;
 
-        Ok((box_widget, position))
+        Ok((rect_widget, position))
     }
 }
 

@@ -1,12 +1,12 @@
 //! Basic integration test for widget composability system.
 
-use escp_layout::widget::{box_new, label_new};
+use escp_layout::widget::{rect_new, label_new};
 use escp_layout::Page;
 
 #[test]
 fn test_basic_widget_composition() {
     // Create a simple widget tree
-    let mut root = box_new!(80, 30);
+    let mut root = rect_new!(80, 30);
 
     // Add a label
     let label = label_new!(20)
@@ -32,18 +32,18 @@ fn test_basic_widget_composition() {
 }
 
 #[test]
-fn test_nested_boxes() {
+fn test_nested_rectes() {
     // Create a nested widget tree
-    let mut root = box_new!(80, 30);
+    let mut root = rect_new!(80, 30);
 
-    let mut child_box = box_new!(40, 15);
+    let mut child_rect = rect_new!(40, 15);
     let label = label_new!(10).add_text("Nested").expect("Text should fit");
-    child_box
+    child_rect
         .add_child(label, (5, 3))
         .expect("Child should fit");
 
-    // Add the child box to the root at (20, 10)
-    root.add_child(child_box, (20, 10))
+    // Add the child rect to the root at (20, 10)
+    root.add_child(child_rect, (20, 10))
         .expect("Child should fit in parent");
 
     // Render to page
@@ -54,7 +54,7 @@ fn test_nested_boxes() {
 
     let page = page_builder.build();
 
-    // The label is at (5, 3) within child_box, which is at (20, 10) within root
+    // The label is at (5, 3) within child_rect, which is at (20, 10) within root
     // So the absolute position is (25, 13)
     let cell = page.get_cell(25, 13).expect("Cell should exist");
     assert_eq!(cell.character(), 'N');
@@ -62,8 +62,8 @@ fn test_nested_boxes() {
 
 #[test]
 fn test_child_exceeds_parent() {
-    let mut parent = box_new!(20, 20);
-    let child = box_new!(30, 10);
+    let mut parent = rect_new!(20, 20);
+    let child = rect_new!(30, 10);
 
     // Child is too wide for parent
     let result = parent.add_child(child, (0, 0));
@@ -72,7 +72,7 @@ fn test_child_exceeds_parent() {
 
 #[test]
 fn test_overlapping_children() {
-    let mut parent = box_new!(80, 30);
+    let mut parent = rect_new!(80, 30);
 
     let label1 = label_new!(20).add_text("Label 1").expect("Text should fit");
     let label2 = label_new!(20).add_text("Label 2").expect("Text should fit");
@@ -88,7 +88,7 @@ fn test_overlapping_children() {
 
 #[test]
 fn test_touching_edges_allowed() {
-    let mut parent = box_new!(80, 30);
+    let mut parent = rect_new!(80, 30);
 
     let label1 = label_new!(20).add_text("Label 1").expect("Text should fit");
     let label2 = label_new!(20).add_text("Label 2").expect("Text should fit");

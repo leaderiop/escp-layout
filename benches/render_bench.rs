@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use escp_layout::{Document, Page, Region, StyleFlags};
+use escp_layout::{Document, Page, StyleFlags};
 
 fn bench_single_page_render(c: &mut Criterion) {
     let mut builder = Page::builder();
@@ -47,27 +47,10 @@ fn bench_page_allocation(c: &mut Criterion) {
     });
 }
 
-fn bench_region_operations(c: &mut Criterion) {
-    let full_page = Region::full_page();
-
-    c.bench_function("region_split_vertical", |b| {
-        b.iter(|| {
-            black_box(full_page.split_vertical(25).unwrap());
-        });
-    });
-
-    c.bench_function("region_split_horizontal", |b| {
-        b.iter(|| {
-            black_box(full_page.split_horizontal(80).unwrap());
-        });
-    });
-}
-
 criterion_group!(
     benches,
     bench_single_page_render,
     bench_multi_page_render,
-    bench_page_allocation,
-    bench_region_operations
+    bench_page_allocation
 );
 criterion_main!(benches);

@@ -25,12 +25,12 @@ The MVP implementation of the Rust ESC/P Layout Engine is **fully functional** a
 
 ### Completed Phases (3/9)
 
-| Phase | Tasks | Status | Notes |
-|-------|-------|--------|-------|
-| Phase 1: Setup | 7/7 | ✅ Complete | Project structure, Cargo config, licenses |
-| Phase 2: Foundational | 8/8 | ✅ Complete | Cell, Region, StyleFlags, LayoutError |
-| Phase 3: Single-Page MVP | 13/20 | ✅ Core Complete | Page, Document, ESC/P rendering |
-| Phase 4-9 | 0/63 | ⏳ Pending | Overflow tests, widgets, polish |
+| Phase                    | Tasks | Status           | Notes                                     |
+| ------------------------ | ----- | ---------------- | ----------------------------------------- |
+| Phase 1: Setup           | 7/7   | ✅ Complete      | Project structure, Cargo config, licenses |
+| Phase 2: Foundational    | 8/8   | ✅ Complete      | Cell, Region, StyleFlags, LayoutError     |
+| Phase 3: Single-Page MVP | 13/20 | ✅ Core Complete | Page, Document, ESC/P rendering           |
+| Phase 4-9                | 0/63  | ⏳ Pending       | Overflow tests, widgets, polish           |
 
 **Overall Progress**: 28/91 tasks (31%)
 
@@ -41,12 +41,14 @@ The MVP implementation of the Rust ESC/P Layout Engine is **fully functional** a
 ### Unit Tests: 55 passing ✅
 
 **Cell & StyleFlags** (11 tests)
+
 - ✅ ASCII character handling
 - ✅ Non-ASCII → '?' conversion
 - ✅ Style bit manipulation
 - ✅ Bold, underline, combined styles
 
 **Region** (13 tests)
+
 - ✅ Geometry validation
 - ✅ Vertical/horizontal splitting
 - ✅ Padding application
@@ -54,23 +56,27 @@ The MVP implementation of the Rust ESC/P Layout Engine is **fully functional** a
 - ✅ Error handling
 
 **Page & PageBuilder** (14 tests)
+
 - ✅ Builder pattern
 - ✅ Write operations (char, string, region fill)
 - ✅ Silent truncation (out-of-bounds)
 - ✅ Immutability enforcement
 
 **Document** (7 tests)
+
 - ✅ Multi-page composition
 - ✅ Builder pattern
 - ✅ Immutability enforcement
 
 **ESC/P Rendering** (7 tests)
+
 - ✅ Initialization sequence
 - ✅ Style state machine
 - ✅ Form-feed separation
 - ✅ Multi-page rendering
 
 **Error Handling** (3 tests)
+
 - ✅ Display trait implementation
 - ✅ std::error::Error trait
 - ✅ Descriptive error messages
@@ -81,12 +87,12 @@ All public API examples in documentation compile and run successfully.
 
 ### Example Programs: 4 successful ✅
 
-| Example | Output Size | Features Demonstrated | Status |
-|---------|-------------|----------------------|--------|
-| hello_world | 8,266 bytes | Basic rendering | ✅ Success |
-| invoice | 8,296 bytes | Regions, styles, tables | ✅ Success |
-| report (3 pages) | 24,822 bytes | Multi-page, templates | ✅ Success |
-| determinism_test | 8,290 bytes | 100x identical renders | ✅ Success |
+| Example          | Output Size  | Features Demonstrated   | Status     |
+| ---------------- | ------------ | ----------------------- | ---------- |
+| hello_world      | 8,266 bytes  | Basic rendering         | ✅ Success |
+| invoice          | 8,296 bytes  | Regions, styles, tables | ✅ Success |
+| report (3 pages) | 24,822 bytes | Multi-page, templates   | ✅ Success |
+| determinism_test | 8,290 bytes  | 100x identical renders  | ✅ Success |
 
 ---
 
@@ -95,29 +101,34 @@ All public API examples in documentation compile and run successfully.
 ### Core Functionality ✅
 
 **Page Management**
+
 - ✅ Fixed 160×51 character grid
 - ✅ Builder pattern with immutability
 - ✅ Silent truncation (no panics)
 - ✅ Cell-level precision
 
 **Document Composition**
+
 - ✅ Multi-page documents
 - ✅ Builder pattern
 - ✅ Immutable after finalization
 
 **Region System**
+
 - ✅ Rectangular area definitions
 - ✅ Vertical/horizontal splitting
 - ✅ Padding support
 - ✅ Geometry validation
 
 **Text Styling**
+
 - ✅ Bold text (ESC E / ESC F)
 - ✅ Underline text (ESC - 1 / ESC - 0)
 - ✅ Combined styles
 - ✅ Optimized state transitions
 
 **ESC/P Output**
+
 - ✅ Correct initialization (ESC @ + SI)
 - ✅ Condensed mode (12 CPI)
 - ✅ Style codes
@@ -126,21 +137,21 @@ All public API examples in documentation compile and run successfully.
 
 ### Constitution Compliance ✅
 
-| Principle | Status | Evidence |
-|-----------|--------|----------|
-| I. Deterministic Behavior | ✅ | 100/100 renders identical |
-| II. V1 Spec Freeze | ✅ | Fixed 160×51, text-mode only |
-| III. Strict Truncation | ✅ | Silent out-of-bounds handling |
-| IV. Immutability | ✅ | Builder pattern, consuming build() |
-| V. ESC/P Text-Mode | ✅ | No bitmap/graphics modes |
-| VI. Builder API | ✅ | PageBuilder, DocumentBuilder |
-| VII. Zero Dependencies | ✅ | Only Rust std (runtime) |
-| VIII. Fixed Layout | ✅ | Explicit region dimensions |
-| IX. Zero-Panic | ✅ | No panics in 72 tests + examples |
-| X. Memory Efficiency | ✅ | Fixed 16KB per page, predictable |
-| XI. Performance | ⏳ | Benchmarks pending (Phase 9) |
-| XII. Testing | ✅ | 72 tests, 4 examples |
-| XIII-XVIII. Governance | ✅ | API docs, no unsafe code |
+| Principle                 | Status | Evidence                           |
+| ------------------------- | ------ | ---------------------------------- |
+| I. Deterministic Behavior | ✅     | 100/100 renders identical          |
+| II. V1 Spec Freeze        | ✅     | Fixed 160×51, text-mode only       |
+| III. Strict Truncation    | ✅     | Silent out-of-bounds handling      |
+| IV. Immutability          | ✅     | Builder pattern, consuming build() |
+| V. ESC/P Text-Mode        | ✅     | No bitmap/graphics modes           |
+| VI. Builder API           | ✅     | PageBuilder, DocumentBuilder       |
+| VII. Zero Dependencies    | ✅     | Only Rust std (runtime)            |
+| VIII. Fixed Layout        | ✅     | Explicit region dimensions         |
+| IX. Zero-Panic            | ✅     | No panics in 72 tests + examples   |
+| X. Memory Efficiency      | ✅     | Fixed 16KB per page, predictable   |
+| XI. Performance           | ⏳     | Benchmarks pending (Phase 9)       |
+| XII. Testing              | ✅     | 72 tests, 4 examples               |
+| XIII-XVIII. Governance    | ✅     | API docs, no unsafe code           |
 
 ---
 
@@ -149,6 +160,7 @@ All public API examples in documentation compile and run successfully.
 ### Byte-Level Analysis
 
 **hello_world.prn** (8,266 bytes):
+
 ```
 1b 40           ESC @ - Printer reset
 0f              SI - Condensed mode
@@ -159,6 +171,7 @@ All public API examples in documentation compile and run successfully.
 ```
 
 **invoice.prn** (8,296 bytes):
+
 ```
 1b 40 0f        Initialization
 1b 45           ESC E - Bold ON
@@ -170,6 +183,7 @@ All public API examples in documentation compile and run successfully.
 ```
 
 **report.prn** (24,822 bytes):
+
 - 3 form-feeds detected ✅
 - Consistent page structure ✅
 - Correct page separators ✅
@@ -181,6 +195,7 @@ All public API examples in documentation compile and run successfully.
 **Test**: Render identical document 100 times
 
 **Results**:
+
 - ✅ 100/100 renders byte-identical
 - ✅ Unique hash count: 1 (expected: 1)
 - ✅ Output size stable: 8,290 bytes
@@ -195,15 +210,17 @@ All public API examples in documentation compile and run successfully.
 
 ## Performance Observations
 
-*Note: Formal benchmarks pending Phase 9*
+_Note: Formal benchmarks pending Phase 9_
 
 **Observed Performance**:
+
 - Single-page render: < 1ms (subjective, unoptimized build)
 - 3-page document: < 2ms (subjective, unoptimized build)
 - 100x determinism test: ~50ms total (< 0.5ms per render)
 - Compilation time: 0.12-0.17s (incremental)
 
 **Memory Usage**:
+
 - Per page: ~16KB (160×51×2 bytes)
 - 3-page document: ~48KB + overhead
 - Rendering: Zero allocations in hot loop ✅
@@ -215,16 +232,18 @@ All public API examples in documentation compile and run successfully.
 ### Not Yet Implemented
 
 ⏳ **Phase 3 Remaining** (7 tasks):
+
 - Integration tests for overflow scenarios
 - Property-based tests with proptest
 - Golden master test files
 
 ⏳ **Phase 4-9** (63 tasks):
+
 - Overflow handling tests (US2)
 - Multi-page tests (US3)
 - Nested region tests (US4)
 - Style optimization tests (US5)
-- Widget system (US6: Label, TextBlock, Paragraph, ASCIIBox, KeyValueList, Table)
+- Widget system (US6: Label, TextBlock, Paragraph, ASCIIRect, KeyValueList, Table)
 - Documentation polish
 - Performance benchmarks
 - Fuzzing targets
@@ -232,6 +251,7 @@ All public API examples in documentation compile and run successfully.
 ### Acceptable for MVP
 
 ✅ The core library is production-ready for basic use cases:
+
 - Single and multi-page documents
 - Text with bold/underline styles
 - Region-based layout
@@ -251,12 +271,14 @@ All public API examples in documentation compile and run successfully.
 ### Production Readiness
 
 **Current MVP is suitable for**:
+
 - ✅ Internal tools and prototypes
 - ✅ Development and testing
 - ✅ Simple document generation
 - ✅ Proof-of-concept applications
 
 **Full production readiness requires**:
+
 - ⏳ Widget system (Phase 8)
 - ⏳ Comprehensive integration tests (Phase 3-4)
 - ⏳ Performance benchmarks (Phase 9)

@@ -6,8 +6,24 @@
 //! - Automatic x-position tracking
 //! - Creating multi-column layouts
 
-use escp_layout::widget::{box_new, label_new, row_area, row_new};
+use escp_layout::widget::{rect_new, label_new, row_area, row_new};
 use escp_layout::Page;
+
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Example 6: Row Layout ===\n");
@@ -15,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.1: Simple 3-column row
     println!("6.1 Simple 3-Column Row:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         let (mut col1, pos1) = row_area!(row, 25)?;
@@ -44,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.2: Variable width columns
     println!("6.2 Variable Width Columns:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         let (mut sidebar, sidebar_pos) = row_area!(row, 20)?;
@@ -72,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.3: Multiple rows of labels per column
     println!("6.3 Multiple Rows Per Column:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         for i in 0..4 {
@@ -96,7 +112,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.4: Narrow and wide columns
     println!("6.4 Narrow and Wide Columns:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         let (mut narrow1, pos1) = row_area!(row, 10)?;
@@ -124,7 +140,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.5: Equal-width columns
     println!("6.5 Equal-Width Columns (5 cols):");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         for i in 0..5 {
@@ -158,7 +174,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 6.7: Full render
     println!("6.7 Full Render:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut row = row_new!(80, 30);
 
         let (mut col1, pos1) = row_area!(row, 25)?;
@@ -191,9 +207,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("  Cell at (2, 10): '{}'", cell1.character());
         println!("  Cell at (27, 10): '{}'", cell2.character());
         println!("  Cell at (52, 10): '{}'", cell3.character());
-        println!("  ✓ Row layout rendered correctly!\n");
+        println!("  ✓ Row layout rendered correctly!");
+
+        // Print visual output
+        println!("\n  Rendered Output (80×25):");
+        print_page(&page, 80, 25);
     }
 
-    println!("=== Row Layout Example Complete ===");
+    println!("\n=== Row Layout Example Complete ===");
     Ok(())
 }

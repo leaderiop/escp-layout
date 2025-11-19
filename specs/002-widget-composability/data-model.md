@@ -18,6 +18,7 @@ This document defines the core data structures, traits, and types for the widget
 **Purpose**: Defines the contract for all renderable components in the system.
 
 **Definition**:
+
 ```rust
 pub trait Widget {
     /// Width of the widget in character columns (compile-time constant)
@@ -41,12 +42,14 @@ pub trait Widget {
 ```
 
 **Design Notes**:
-- Const generic parameters (WIDTH, HEIGHT) enable compile-time size specification for Box<WIDTH, HEIGHT>
+
+- Const generic parameters (WIDTH, HEIGHT) enable compile-time size specification for Rect<WIDTH, HEIGHT>
 - Associated constants provide fixed dimensions at type level
 - `&self` (immutable) for rendering aligns with immutability guarantee
 - Position parameter is absolute coordinates (RenderContext handles coordinate translation)
 
 **Validation Rules**:
+
 - `WIDTH` and `HEIGHT` MUST be non-zero const values (enforced at type level)
 - `render_to()` MUST NOT panic under any input (constitutional zero-panic guarantee)
 - `render_to()` MUST produce identical output for identical inputs (deterministic behavior)
@@ -61,35 +64,39 @@ pub trait Widget {
 **Purpose**: Internal tree node representing a widget and its position within a parent.
 
 **Definition**:
+
 ```rust
 pub(crate) struct WidgetNode {
     /// Relative position within parent (column, row)
     position: (u16, u16),
 
     /// The widget instance (trait object for heterogeneous types)
-    widget: Box<dyn Widget>,
+    widget: Rect<dyn Widget>,
 }
 ```
 
 **Relationships**:
-- Owned by parent widget (e.g., `Box` widget contains `Vec<WidgetNode>`)
+
+- Owned by parent widget (e.g., `Rect` widget contains `Vec<WidgetNode>`)
 - `position` is relative to parent's origin (0, 0)
 - `widget` is heap-allocated trait object (enables polymorphism)
 
 **Memory Layout**:
+
 - `position`: 4 bytes (2 × u16)
 - `widget`: 16 bytes (fat pointer: data ptr + vtable ptr)
 - **Total**: 20 bytes per node (excluding widget's own data)
 
 **Validation Rules**:
+
 - `position` MUST be validated against parent bounds before node creation
 - `widget` MUST implement Widget trait (enforced by type system)
 
 #### Type Erasure Strategy
 
-**Challenge**: `WidgetNode` must store widgets with different const generic parameters (e.g., `Box<80, 30>`, `Label<20, 1>`) in a homogeneous collection.
+**Challenge**: `WidgetNode` must store widgets with different const generic parameters (e.g., `Rect<80, 30>`, `Label<20, 1>`) in a homogeneous collection.
 
-**Solution**: Trait object storage via `Box<dyn Widget>`
+**Solution**: Trait object storage via `Rect<dyn Widget>`
 
 The `Widget` trait uses **associated constants** (not const generic parameters):
 
@@ -101,10 +108,10 @@ pub trait Widget {
 }
 ```
 
-Widget implementations (e.g., `Box<const WIDTH: u16, const HEIGHT: u16>`) use const generics to provide these associated constant values:
+Widget implementations (e.g., `Rect<const WIDTH: u16, const HEIGHT: u16>`) use const generics to provide these associated constant values:
 
 ```rust
-impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
+impl<const WIDTH: u16, const HEIGHT: u16> Widget for Rect<WIDTH, HEIGHT> {
     const WIDTH: u16 = WIDTH;
     const HEIGHT: u16 = HEIGHT;
     // ...
@@ -112,30 +119,32 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
 ```
 
 **Why this works**:
+
 - Associated constants are **monomorphized** at compile-time when concrete types instantiate the trait
-- Once `Box::<80, 30>::new()` is created, its `Widget::WIDTH` and `Widget::HEIGHT` are baked into the vtable
-- `Box<dyn Widget>` stores a trait object with a vtable pointer that includes the concrete type's WIDTH/HEIGHT values
+- Once `Rect::<80, 30>::new()` is created, its `Widget::WIDTH` and `Widget::HEIGHT` are baked into the vtable
+- `Rect<dyn Widget>` stores a trait object with a vtable pointer that includes the concrete type's WIDTH/HEIGHT values
 - Calling `widget.WIDTH` on a trait object accesses the monomorphized constant from the vtable
 
-**Alternative Considered**: Enum-based storage (`enum AnyWidget { Box80x30(Box<80, 30>), Label20x1(Label<20, 1>) }`) - rejected due to non-extensibility and code generation burden.
+**Alternative Considered**: Enum-based storage (`enum AnyWidget { Rect80x30(Rect<80, 30>), Label20x1(Label<20, 1>) }`) - rejected due to non-extensibility and code generation burden.
 
-**Validation**: T007 task implements WidgetNode with `Box<dyn Widget>` storage.
+**Validation**: T007 task implements WidgetNode with `Rect<dyn Widget>` storage.
 
 ---
 
-### Box<WIDTH, HEIGHT> Widget
+### Rect<WIDTH, HEIGHT> Widget
 
 **Purpose**: Primary container widget that stores children with explicit positions. Uses const generic parameters for compile-time size specification.
 
 **Definition**:
+
 ```rust
-pub struct Box<const WIDTH: u16, const HEIGHT: u16> {
+pub struct Rect<const WIDTH: u16, const HEIGHT: u16> {
     /// Children widgets with relative positions
     children: Vec<WidgetNode>,
 }
 
-impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
-    /// Create a new Box widget with const generic dimensions.
+impl<const WIDTH: u16, const HEIGHT: u16> Rect<WIDTH, HEIGHT> {
+    /// Create a new Rect widget with const generic dimensions.
     ///
     /// # Panics
     /// Panics in debug builds if WIDTH or HEIGHT is zero.
@@ -143,7 +152,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
     /// (const generic validation should prevent instantiation).
     pub fn new() -> Self {
         // Runtime assertion in debug builds (const_assert! not stable yet)
-        debug_assert!(WIDTH > 0 && HEIGHT > 0, "Box dimensions must be non-zero");
+        debug_assert!(WIDTH > 0 && HEIGHT > 0, "Rect dimensions must be non-zero");
 
         Self {
             children: Vec::new(),
@@ -213,14 +222,14 @@ impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
         // Add child to tree
         self.children.push(WidgetNode {
             position,
-            widget: std::boxed::Box::new(widget),
+            widget: std::rected::Rect::new(widget),
         });
 
         Ok(())
     }
 }
 
-impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
+impl<const WIDTH: u16, const HEIGHT: u16> Widget for Rect<WIDTH, HEIGHT> {
     const WIDTH: u16 = WIDTH;
     const HEIGHT: u16 = HEIGHT;
 
@@ -243,6 +252,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
 ```
 
 **State Transitions**:
+
 ```
 [Created] --> add_child() --> [Building]
 [Building] --> add_child() --> [Building]
@@ -251,6 +261,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
 ```
 
 **Validation Rules**:
+
 - Width and height MUST be > 0 (enforced at construction)
 - Children MUST fit within parent bounds (validated in `add_child()`)
 - Children positions MUST NOT cause integer overflow (checked arithmetic)
@@ -263,6 +274,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
 **Purpose**: Public API abstraction that wraps PageBuilder during render phase, tracking cumulative coordinates and enforcing boundary validation with error returns.
 
 **Definition**:
+
 ```rust
 pub struct RenderContext<'a> {
     /// Reference to the underlying PageBuilder
@@ -275,7 +287,7 @@ pub struct RenderContext<'a> {
 
 **Public API Methods**:
 
-```rust
+````rust
 impl<'a> RenderContext<'a> {
     /// Create a new RenderContext wrapping a PageBuilder (internal use).
     ///
@@ -373,14 +385,16 @@ impl<'a> RenderContext<'a> {
         self.clip_bounds
     }
 }
-```
+````
 
 **Relationships**:
+
 - Wraps `PageBuilder` during render phase (scoped lifetime `'a`)
 - Created by `Page::render()` and passed to widget tree traversal
 - **Public API** - widgets implement `render_to()` using RenderContext methods
 
 **Validation Rules**:
+
 - All write operations MUST validate bounds and return errors (per Constitution Widget Exception)
 - Clip bounds MUST match page dimensions (160 × 51 for V1)
 - MUST delegate to PageBuilder for actual rendering (maintains ESC/P compliance)
@@ -393,7 +407,8 @@ impl<'a> RenderContext<'a> {
 **Purpose**: Leaf widget for rendering styled text content with compile-time const generic dimensions.
 
 **Definition**:
-```rust
+
+````rust
 pub struct Label<const WIDTH: u16, const HEIGHT: u16> {
     /// Text content to render (None until add_text() called)
     text: Option<String>,
@@ -484,9 +499,10 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Label<WIDTH, HEIGHT> {
         context.write_styled(&self.text, position, self.style)
     }
 }
-```
+````
 
 **Usage Examples**:
+
 ```rust
 // Label with explicit const generic dimensions (builder pattern)
 let label1 = Label::<15, 1>::new()
@@ -513,6 +529,7 @@ root.add_child(label4, (0, 2))?;
 ```
 
 **Validation Rules**:
+
 - Text MUST be valid UTF-8 (enforced by String type)
 - WIDTH and HEIGHT MUST be > 0 (enforced via debug_assert!)
 - HEIGHT MUST be 1 (enforced via debug_assert! in new(), panics in debug builds if HEIGHT ≠ 1)
@@ -529,6 +546,7 @@ root.add_child(label4, (0, 2))?;
 **Purpose**: Comprehensive error type for all widget rendering violations.
 
 **Definition**:
+
 ```rust
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -576,8 +594,8 @@ pub enum RenderError {
 // Note: ZeroSizeParent error variant removed per FR-007 and Constitution Principle VI.
 // Zero-size prevention uses validation hierarchy:
 // 1. Compile-time (future): const generic value constraints (not yet stable in Rust 1.91.1)
-// 2. Development-time (PRIMARY): debug_assert!(WIDTH > 0 && HEIGHT > 0) in Box::new()
-// 3. Project Policy: Zero-size Box instantiation in release builds is undefined behavior
+// 2. Development-time (PRIMARY): debug_assert!(WIDTH > 0 && HEIGHT > 0) in Rect::new()
+// 3. Project Policy: Zero-size Rect instantiation in release builds is undefined behavior
 
 impl std::fmt::Display for RenderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -629,11 +647,13 @@ impl std::error::Error for RenderError {}
 ```
 
 **Usage Context**:
+
 - **Composition Phase**: `ChildExceedsParent`, `OverlappingChildren`, `InsufficientSpace`, `IntegerOverflow` (returned by `add_child()` or layout methods)
 - **Render Phase**: `OutOfBounds`, `IntegerOverflow` (returned by `RenderContext` or widget traversal)
 - **Widget Construction**: `TextExceedsWidth` (returned by `Label::add_text()` when text validation fails)
 
 **Validation Rules**:
+
 - All errors MUST provide contextual information (sizes, positions, bounds)
 - Error messages MUST be human-readable for debugging
 - Errors MUST NOT be ignored (Result type forces handling)
@@ -643,18 +663,20 @@ impl std::error::Error for RenderError {}
 ## Layout Components
 
 **Mutability Model**: Layout components (Column, Row, Stack) use **mutable state** (`&mut self`) in their `area()` methods to track position state (current_x, current_y). This is necessary because:
+
 - Each call to `area()` advances the internal position counter
 - The component must remember how much space has been allocated
 - Multiple calls to `area()` build up the layout incrementally
 
-**Const Generic Area Methods**: Layout components return Box<const WIDTH, const HEIGHT> widgets using const generic area() methods. The dimensions are specified via turbofish syntax at the call site (e.g., `column.area::<10>()`), preserving compile-time size specification.
+**Const Generic Area Methods**: Layout components return Rect<const WIDTH, const HEIGHT> widgets using const generic area() methods. The dimensions are specified via turbofish syntax at the call site (e.g., `column.area::<10>()`), preserving compile-time size specification.
 
 ### Column Layout
 
-**Purpose**: Divides parent Box vertically, returning nested Box widgets for each row with compile-time dimensions specified via turbofish.
+**Purpose**: Divides parent Rect vertically, returning nested Rect widgets for each row with compile-time dimensions specified via turbofish.
 
 **Definition**:
-```rust
+
+````rust
 pub struct Column<const WIDTH: u16, const HEIGHT: u16> {
     current_y: u16,
 }
@@ -669,7 +691,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
 
     /// Allocate a horizontal area (row) with specified height via const generic.
     ///
-    /// Returns a Box<WIDTH, H> positioned at the next available Y offset.
+    /// Returns a Rect<WIDTH, H> positioned at the next available Y offset.
     ///
     /// # Errors
     /// Returns `InsufficientSpace` if requested height exceeds remaining space.
@@ -677,9 +699,9 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
     /// # Example
     /// ```
     /// let mut column = Column::<80, 30>::new();
-    /// let (box1, pos1) = column.area::<10>()?; // Returns Box<80, 10>
+    /// let (rect1, pos1) = column.area::<10>()?; // Returns Rect<80, 10>
     /// ```
-    pub fn area<const H: u16>(&mut self) -> Result<(Box<WIDTH, H>, (u16, u16)), RenderError> {
+    pub fn area<const H: u16>(&mut self) -> Result<(Rect<WIDTH, H>, (u16, u16)), RenderError> {
         if self.current_y + H > HEIGHT {
             return Err(RenderError::InsufficientSpace {
                 available: HEIGHT - self.current_y,
@@ -689,16 +711,17 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
         }
 
         let position = (0, self.current_y);
-        let box_widget = Box::<WIDTH, H>::new();
+        let rect_widget = Rect::<WIDTH, H>::new();
 
         self.current_y += H;
 
-        Ok((box_widget, position))
+        Ok((rect_widget, position))
     }
 }
-```
+````
 
 **State Transitions**:
+
 ```
 [Created] --> area::<H>() --> [Allocating]
 [Allocating] --> area::<H>() --> [Allocating]
@@ -706,16 +729,17 @@ impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
 ```
 
 **Usage Example**:
+
 ```rust
-let mut root = Box::<80, 30>::new();
+let mut root = Rect::<80, 30>::new();
 let mut column = Column::<80, 30>::new();
 
-let (mut row1, pos1) = column.area::<10>()?;  // Box<80, 10>
+let (mut row1, pos1) = column.area::<10>()?;  // Rect<80, 10>
 let label1 = Label::<20, 1>::new("Row 1")?;
 row1.add_child(label1, (0, 0))?;
 root.add_child(row1, pos1)?;
 
-let (mut row2, pos2) = column.area::<10>()?;  // Box<80, 10>
+let (mut row2, pos2) = column.area::<10>()?;  // Rect<80, 10>
 let label2 = Label::<20, 1>::new("Row 2")?;
 row2.add_child(label2, (0, 0))?;
 root.add_child(row2, pos2)?;
@@ -725,10 +749,11 @@ root.add_child(row2, pos2)?;
 
 ### Row Layout
 
-**Purpose**: Divides parent Box horizontally, returning nested Box widgets for each column with compile-time dimensions specified via turbofish.
+**Purpose**: Divides parent Rect horizontally, returning nested Rect widgets for each column with compile-time dimensions specified via turbofish.
 
 **Definition**:
-```rust
+
+````rust
 pub struct Row<const WIDTH: u16, const HEIGHT: u16> {
     current_x: u16,
 }
@@ -743,7 +768,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
 
     /// Allocate a vertical area (column) with specified width via const generic.
     ///
-    /// Returns a Box<W, HEIGHT> positioned at the next available X offset.
+    /// Returns a Rect<W, HEIGHT> positioned at the next available X offset.
     ///
     /// # Errors
     /// Returns `InsufficientSpace` if requested width exceeds remaining space.
@@ -751,9 +776,9 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
     /// # Example
     /// ```
     /// let mut row = Row::<80, 30>::new();
-    /// let (box1, pos1) = row.area::<20>()?; // Returns Box<20, 30>
+    /// let (rect1, pos1) = row.area::<20>()?; // Returns Rect<20, 30>
     /// ```
-    pub fn area<const W: u16>(&mut self) -> Result<(Box<W, HEIGHT>, (u16, u16)), RenderError> {
+    pub fn area<const W: u16>(&mut self) -> Result<(Rect<W, HEIGHT>, (u16, u16)), RenderError> {
         if self.current_x + W > WIDTH {
             return Err(RenderError::InsufficientSpace {
                 available: WIDTH - self.current_x,
@@ -763,23 +788,24 @@ impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
         }
 
         let position = (self.current_x, 0);
-        let box_widget = Box::<W, HEIGHT>::new();
+        let rect_widget = Rect::<W, HEIGHT>::new();
 
         self.current_x += W;
 
-        Ok((box_widget, position))
+        Ok((rect_widget, position))
     }
 }
-```
+````
 
 ---
 
 ### Stack Layout
 
-**Purpose**: Returns overlapping nested Box widgets at the same position (for layering) with compile-time dimensions.
+**Purpose**: Returns overlapping nested Rect widgets at the same position (for layering) with compile-time dimensions.
 
 **Definition**:
-```rust
+
+````rust
 pub struct Stack<const WIDTH: u16, const HEIGHT: u16>;
 
 impl<const WIDTH: u16, const HEIGHT: u16> Stack<WIDTH, HEIGHT> {
@@ -790,32 +816,33 @@ impl<const WIDTH: u16, const HEIGHT: u16> Stack<WIDTH, HEIGHT> {
 
     /// Allocate an overlapping area (same position for all calls).
     ///
-    /// Returns a Box<WIDTH, HEIGHT> positioned at (0, 0) for layering.
+    /// Returns a Rect<WIDTH, HEIGHT> positioned at (0, 0) for layering.
     ///
     /// # Example
     /// ```
     /// let stack = Stack::<80, 30>::new();
-    /// let (box1, pos1) = stack.area(); // Returns Box<80, 30> at (0, 0)
-    /// let (box2, pos2) = stack.area(); // Returns Box<80, 30> at (0, 0)
+    /// let (rect1, pos1) = stack.area(); // Returns Rect<80, 30> at (0, 0)
+    /// let (rect2, pos2) = stack.area(); // Returns Rect<80, 30> at (0, 0)
     /// ```
-    pub fn area(&self) -> (Box<WIDTH, HEIGHT>, (u16, u16)) {
+    pub fn area(&self) -> (Rect<WIDTH, HEIGHT>, (u16, u16)) {
         let position = (0, 0);
-        let box_widget = Box::<WIDTH, HEIGHT>::new();
-        (box_widget, position)
+        let rect_widget = Rect::<WIDTH, HEIGHT>::new();
+        (rect_widget, position)
     }
 }
-```
+````
 
 **Usage Example**:
+
 ```rust
-let mut root = Box::<80, 30>::new();
+let mut root = Rect::<80, 30>::new();
 let stack = Stack::<80, 30>::new();
 
-let (mut bg, pos) = stack.area();  // Box<80, 30> at (0, 0)
+let (mut bg, pos) = stack.area();  // Rect<80, 30> at (0, 0)
 // bg.add_child(Background::new(), (0, 0))?;
 root.add_child(bg, pos)?;
 
-let (mut fg, pos) = stack.area();  // Box<80, 30> at (0, 0)
+let (mut fg, pos) = stack.area();  // Rect<80, 30> at (0, 0)
 let label = Label::<10, 1>::new("Overlay")?;
 fg.add_child(label, (10, 10))?;
 root.add_child(fg, pos)?;
@@ -830,7 +857,8 @@ root.add_child(fg, pos)?;
 **Purpose**: Render a widget tree to the page, traversing the tree and outputting to PageBuilder.
 
 **Definition**:
-```rust
+
+````rust
 impl Page {
     /// Render a widget tree to this page.
     ///
@@ -847,7 +875,7 @@ impl Page {
     /// # Example
     /// ```
     /// let mut page = Page::new();
-    /// let root = Box::<80, 30>::new();
+    /// let root = Rect::<80, 30>::new();
     /// page.render(&root)?;  // Can render multiple times
     /// page.render(&root)?;  // Same widget, multiple renders
     /// ```
@@ -856,7 +884,7 @@ impl Page {
         widget.render_to(&mut context, (0, 0))
     }
 }
-```
+````
 
 ---
 
@@ -884,7 +912,7 @@ impl Page {
                            │
                            ▼
           ┌─────────────────────────────────┐
-          │   Box<WIDTH, HEIGHT> (Widget)   │
+          │   Rect<WIDTH, HEIGHT> (Widget)   │
           │  ┌───────────────────────────┐  │
           │  │ children: Vec<WidgetNode> │  │
           │  │ (const WIDTH, HEIGHT)     │  │
@@ -896,14 +924,14 @@ impl Page {
           │      WidgetNode                 │
           │  ┌───────────────────────────┐  │
           │  │ position: (u16, u16)      │  │
-          │  │ widget: Box<dyn Widget>   │  │
+          │  │ widget: Rect<dyn Widget>   │  │
           │  └───────────────────────────┘  │
           └─────────────────────────────────┘
                            │
                            ▼
           ┌─────────────────────────────────┐
           │      Any Widget Impl            │
-          │  (Box, Label, etc.)             │
+          │  (Rect, Label, etc.)             │
           └─────────────────────────────────┘
 ```
 
@@ -914,6 +942,7 @@ impl Page {
 **Per-Page Budget**: < 128 KB total (per Constitution Principle X and spec clarification 2025-11-19)
 
 **Per-Page Allocation Breakdown**:
+
 - Character grid: 160 × 51 = 8,160 cells × 1 byte (char) = ~8 KB
 - Style data: 160 × 51 = 8,160 cells × 1 byte (style flags) = ~8 KB
 - Widget tree overhead (estimated 100 nodes): 100 × 40 bytes = ~4 KB
@@ -921,13 +950,14 @@ impl Page {
 - **Total Estimated**: ~24 KB (well within 128 KB budget, < 19% utilization)
 
 **Typical Widget Tree** (3-column layout with labels):
+
 ```
-Root Box<80, 30>
-  ├─ Column1 Box<25, 30> at (0, 0)
+Root Rect<80, 30>
+  ├─ Column1 Rect<25, 30> at (0, 0)
   │   └─ Label<25, 1> at (0, 0)
-  ├─ Column2 Box<25, 30> at (27, 0)
+  ├─ Column2 Rect<25, 30> at (27, 0)
   │   └─ Label<25, 1> at (0, 0)
-  └─ Column3 Box<25, 30> at (54, 0)
+  └─ Column3 Rect<25, 30> at (54, 0)
       └─ Label<25, 1> at (0, 0)
 
 Node count: 7 widgets × 20 bytes = 140 bytes overhead
@@ -937,25 +967,26 @@ Node count: 7 widgets × 20 bytes = 140 bytes overhead
 
 ## Validation Summary
 
-| Entity | Validation Rules | Error Type |
-|--------|------------------|------------|
-| Box::new | WIDTH > 0, HEIGHT > 0 | debug_assert! panic (debug builds only) |
-| Box::add_child | child fits in parent bounds | ChildExceedsParent |
-| Box::add_child | position + size <= parent size | OutOfBounds |
-| Box::add_child | no overlap with existing children (AABB) | OverlappingChildren |
-| Label::new | HEIGHT == 1 | debug_assert! panic (debug builds only) |
-| Label::add_text | text.len() <= WIDTH | TextExceedsWidth |
-| Label::add_text | no newline characters in text | TextExceedsWidth |
-| RenderContext::write_text | position within clip bounds | OutOfBounds |
-| Column::area | current_y + H <= HEIGHT | InsufficientSpace |
-| Row::area | current_x + W <= WIDTH | InsufficientSpace |
-| All coordinate arithmetic | no integer overflow (checked_add) | IntegerOverflow |
+| Entity                    | Validation Rules                         | Error Type                              |
+| ------------------------- | ---------------------------------------- | --------------------------------------- |
+| Rect::new                 | WIDTH > 0, HEIGHT > 0                    | debug_assert! panic (debug builds only) |
+| Rect::add_child           | child fits in parent bounds              | ChildExceedsParent                      |
+| Rect::add_child           | position + size <= parent size           | OutOfBounds                             |
+| Rect::add_child           | no overlap with existing children (AABB) | OverlappingChildren                     |
+| Label::new                | HEIGHT == 1                              | debug_assert! panic (debug builds only) |
+| Label::add_text           | text.len() <= WIDTH                      | TextExceedsWidth                        |
+| Label::add_text           | no newline characters in text            | TextExceedsWidth                        |
+| RenderContext::write_text | position within clip bounds              | OutOfBounds                             |
+| Column::area              | current_y + H <= HEIGHT                  | InsufficientSpace                       |
+| Row::area                 | current_x + W <= WIDTH                   | InsufficientSpace                       |
+| All coordinate arithmetic | no integer overflow (checked_add)        | IntegerOverflow                         |
 
 ---
 
 ## Next Steps
 
 Phase 1 continues with:
+
 1. **contracts/**: API contracts (Rust trait definitions, type signatures)
 2. **quickstart.md**: Developer onboarding guide with examples
 3. **Agent context update**: Update CLAUDE.md with new technologies

@@ -1,15 +1,15 @@
-// API Contract: DynamicBox Widget
+// API Contract: DynamicRect Widget
 // Feature: 002-widget-composability
 // Status: Phase 1 Design
 
 /// Primary container widget that stores children with explicit positions.
 ///
-/// DynamicBox supports runtime-determined dimensions (unlike const-generic
+/// DynamicRect supports runtime-determined dimensions (unlike const-generic
 /// alternatives) to enable layout components (Column, Row, Stack) to return
-/// boxes with calculated sizes.
+/// rectes with calculated sizes.
 ///
 /// # Lifecycle
-/// 1. **Creation**: `DynamicBox::new(width, height)` validates non-zero dimensions
+/// 1. **Creation**: `DynamicRect::new(width, height)` validates non-zero dimensions
 /// 2. **Composition**: `add_child(widget, position)` builds the widget tree
 /// 3. **Rendering**: `render_to(context, position)` traverses tree immutably
 ///
@@ -17,7 +17,7 @@
 /// - Base struct: 32 bytes (width, height, Vec metadata)
 /// - Per child: ~20 bytes (WidgetNode) + child's own size
 /// - Typical 3-column layout: ~140 bytes overhead (7 widgets)
-pub struct DynamicBox {
+pub struct DynamicRect {
     /// Width in character columns (validated non-zero at construction)
     width: u16,
 
@@ -28,8 +28,8 @@ pub struct DynamicBox {
     children: Vec<WidgetNode>,
 }
 
-impl DynamicBox {
-    /// Create a new Box widget with specified dimensions.
+impl DynamicRect {
+    /// Create a new Rect widget with specified dimensions.
     ///
     /// # Parameters
     /// - `width`: Width in character columns (must be > 0)
@@ -40,7 +40,7 @@ impl DynamicBox {
     ///
     /// # Example
     /// ```rust,ignore
-    /// let box_widget = DynamicBox::new(80, 30)?;
+    /// let rect_widget = DynamicRect::new(80, 30)?;
     /// ```
     pub fn new(width: u16, height: u16) -> Result<Self, RenderError>;
 
@@ -51,7 +51,7 @@ impl DynamicBox {
     ///
     /// # Parameters
     /// - `widget`: Any type implementing Widget + 'static
-    /// - `position`: Relative position (column, row) within this Box
+    /// - `position`: Relative position (column, row) within this Rect
     ///
     /// # Errors
     /// - `RenderError::ChildExceedsParent`: Child's size extends beyond parent bounds
@@ -65,9 +65,9 @@ impl DynamicBox {
     ///
     /// # Example
     /// ```rust,ignore
-    /// let mut box_widget = DynamicBox::new(80, 30)?;
+    /// let mut rect_widget = DynamicRect::new(80, 30)?;
     /// let label = Label::new("Hello");
-    /// box_widget.add_child(label, (10, 5))?;
+    /// rect_widget.add_child(label, (10, 5))?;
     /// ```
     pub fn add_child(
         &mut self,
@@ -75,15 +75,15 @@ impl DynamicBox {
         position: (u16, u16),
     ) -> Result<(), RenderError>;
 
-    /// Get the width of this Box (implements Widget::width).
+    /// Get the width of this Rect (implements Widget::width).
     pub fn width(&self) -> u16;
 
-    /// Get the height of this Box (implements Widget::height).
+    /// Get the height of this Rect (implements Widget::height).
     pub fn height(&self) -> u16;
 }
 
-impl Widget for DynamicBox {
-    /// Render this Box and all its children to the context.
+impl Widget for DynamicRect {
+    /// Render this Rect and all its children to the context.
     ///
     /// Traverses children in insertion order (deterministic), calculating
     /// cumulative positions for each child. Each child is rendered at
@@ -110,9 +110,9 @@ impl Widget for DynamicBox {
 
 // Internal structure (not exposed in public API)
 pub(crate) struct WidgetNode {
-    /// Relative position within parent Box
+    /// Relative position within parent Rect
     position: (u16, u16),
 
     /// The widget instance (trait object for heterogeneous types)
-    widget: Box<dyn Widget>,
+    widget: Rect<dyn Widget>,
 }

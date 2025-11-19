@@ -8,15 +8,15 @@
 
 ## Document Control
 
-| Field | Value |
-|-------|-------|
-| **Document Version** | 1.0 |
-| **Product Version** | V1.0 |
-| **Author** | Mohammad AlMechkor |
-| **Status** | Draft |
-| **Classification** | Internal - Engineering |
-| **Date Created** | 2025-01-18 |
-| **Last Updated** | 2025-01-18 |
+| Field                | Value                  |
+| -------------------- | ---------------------- |
+| **Document Version** | 1.0                    |
+| **Product Version**  | V1.0                   |
+| **Author**           | Mohammad AlMechkor     |
+| **Status**           | Draft                  |
+| **Classification**   | Internal - Engineering |
+| **Date Created**     | 2025-01-18             |
+| **Last Updated**     | 2025-01-18             |
 
 ### Related Documents
 
@@ -26,9 +26,9 @@
 
 ### Reviewers
 
-| Role | Name | Status |
-|------|------|--------|
-| **Lead Architect** | [TBD] | [ ] Pending |
+| Role                     | Name  | Status      |
+| ------------------------ | ----- | ----------- |
+| **Lead Architect**       | [TBD] | [ ] Pending |
 | **Senior Rust Engineer** | [TBD] | [ ] Pending |
 | **Performance Engineer** | [TBD] | [ ] Pending |
 
@@ -61,6 +61,7 @@ This Technical Design Document (TDD) provides detailed implementation specificat
 ### 1.2 Scope
 
 **In Scope**:
+
 - Detailed Rust struct/enum/trait definitions
 - Memory layout analysis and optimization
 - Algorithm pseudocode and complexity analysis
@@ -69,6 +70,7 @@ This Technical Design Document (TDD) provides detailed implementation specificat
 - Performance optimization strategies
 
 **Out of Scope**:
+
 - Business requirements (see PRD)
 - User documentation (see separate docs)
 - Deployment procedures (see DevOps docs)
@@ -114,7 +116,7 @@ This Technical Design Document (TDD) provides detailed implementation specificat
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    WIDGET LAYER                              │
-│  Label, Table, Paragraph, Box, etc.                         │
+│  Label, Table, Paragraph, Rect, etc.                         │
 │  (Implements Widget trait)                                   │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -151,7 +153,7 @@ src/
 │   ├── label.rs
 │   ├── text_block.rs
 │   ├── paragraph.rs
-│   ├── box_widget.rs
+│   ├── rect_widget.rs
 │   ├── key_value.rs
 │   └── table.rs
 ├── renderer/
@@ -187,6 +189,7 @@ utils/*  ───> (used by widgets/*, renderer/*)
 **Purpose**: Represents a single character position on the page.
 
 **Requirements**:
+
 - Store ASCII character (32-126)
 - Store style (bold, underline)
 - Minimize memory footprint
@@ -263,6 +266,7 @@ impl Default for Cell {
 ```
 
 **Memory Analysis**:
+
 - Size: `2 bytes` per cell
 - Total page memory: `2 bytes × 8,160 cells = 16,320 bytes ≈ 16 KB`
 
@@ -272,7 +276,7 @@ impl Default for Cell {
 
 **Purpose**: Compact bit-packed representation of text styles.
 
-```rust
+````rust
 /// Bit-packed style representation (1 byte)
 ///
 /// Layout:
@@ -321,7 +325,7 @@ impl StyleBits {
         self.0
     }
 }
-```
+````
 
 ---
 
@@ -391,7 +395,7 @@ impl From<StyleBits> for Style {
 pub struct Page {
     /// Cell storage: 2D array for cache-friendly access
     /// Row-major order: cells[y][x]
-    cells: Box<[[Cell; Self::WIDTH]; Self::HEIGHT]>,
+    cells: Rect<[[Cell; Self::WIDTH]; Self::HEIGHT]>,
 
     /// Optional metadata (page number, etc.)
     metadata: PageMetadata,
@@ -404,8 +408,8 @@ impl Page {
     /// Creates a new empty page
     pub fn new() -> Self {
         Self {
-            // Box to avoid stack overflow (16KB)
-            cells: Box::new([[Cell::empty(); Self::WIDTH]; Self::HEIGHT]),
+            // Rect to avoid stack overflow (16KB)
+            cells: Rect::new([[Cell::empty(); Self::WIDTH]; Self::HEIGHT]),
             metadata: PageMetadata::default(),
         }
     }
@@ -477,7 +481,8 @@ impl Default for Page {
 ```
 
 **Performance Notes**:
-- `Box<[[Cell; 160]; 51]>` prevents stack overflow
+
+- `Rect<[[Cell; 160]; 51]>` prevents stack overflow
 - Row-major layout: `cells[y][x]` for cache-friendly iteration
 - Inline hints for hot path (write_cell, get_cell)
 
@@ -687,6 +692,7 @@ unsafe impl Sync for Document {}
 ### 4.1 Memory Budget Analysis
 
 **Per Page**:
+
 ```
 Cell storage: 160 × 51 × 2 bytes = 16,320 bytes
 Metadata:                          ~8 bytes
@@ -695,6 +701,7 @@ Total per page:                   ~16 KB
 ```
 
 **Per Document (100 pages)**:
+
 ```
 100 pages × 16 KB = 1.6 MB
 Document overhead:  ~24 bytes (Vec header)
@@ -709,16 +716,19 @@ Total:              ~1.6 MB
 ### 4.2 Cache-Friendly Layout
 
 **Row-Major Order**:
+
 ```rust
 cells: [[Cell; 160]; 51]  // cells[y][x]
 ```
 
 **Rationale**:
+
 - Rendering iterates line-by-line (y, then x)
 - Row-major layout keeps consecutive x-values in the same cache line
 - Cache line (64 bytes) holds 32 cells (64 / 2 bytes per cell)
 
 **Cache Miss Analysis**:
+
 ```
 Total cells: 8,160
 Cache lines (64 bytes): 8,160 / 32 = 255 cache lines
@@ -728,12 +738,13 @@ Cold miss rate: 255 / 8,160 = 3.1%
 ### 4.3 Allocation Strategy
 
 **Stack vs Heap**:
+
 ```rust
 // ❌ Stack allocation would overflow (16 KB):
 // cells: [[Cell; 160]; 51]
 
-// ✅ Heap allocation via Box:
-cells: Box<[[Cell; 160]; 51]>
+// ✅ Heap allocation via Rect:
+cells: Rect<[[Cell; 160]; 51]>
 ```
 
 **Benchmark Target**: Page allocation should be < 10 μs.
@@ -747,6 +758,7 @@ cells: Box<[[Cell; 160]; 51]>
 **Challenge**: Prevent dangling references between builder layers.
 
 **Solution**: Use hierarchical lifetimes:
+
 ```
 DocumentBuilder (owns data)
     ↓
@@ -934,6 +946,7 @@ impl<'page> RegionHandle<'page> {
 ```
 
 **Lifetime Safety**:
+
 ```rust
 // ✅ Valid: region handle borrows from page builder
 let mut doc = DocumentBuilder::new();
@@ -952,6 +965,7 @@ region.write_text(0, 0, "Hello", Style::NORMAL);
 ### 6.1 Tree Structure
 
 **Representation**:
+
 ```
 Root Region (160×51)
 ├── Header (160×10)
@@ -964,6 +978,7 @@ Root Region (160×51)
 ```
 
 **In-Memory**:
+
 ```rust
 Region {
     x: 0, y: 0, width: 160, height: 51,
@@ -978,6 +993,7 @@ Region {
 ### 6.2 Coordinate Translation
 
 **Algorithm**:
+
 ```
 Absolute coordinates = Region origin + Local offset + Padding offset
 
@@ -1172,6 +1188,7 @@ impl Table {
 **Purpose**: Track current style state to minimize ESC/P command output.
 
 **State Diagram**:
+
 ```
       ┌──────────────────────────────────────┐
       │         NORMAL (00)                  │
@@ -1193,6 +1210,7 @@ Transitions emit ESC codes ONLY when style changes
 ```
 
 **Implementation**:
+
 ```rust
 /// Tracks current style state during rendering
 #[derive(Debug)]
@@ -1348,6 +1366,7 @@ impl Default for EscpRenderer {
 ```
 
 **Optimization Opportunities** (future):
+
 - Skip trailing spaces on each line
 - Compress runs of identical characters
 - Use relative positioning (ESC $ for horizontal positioning)
@@ -1456,17 +1475,18 @@ pub fn create_subregion(
 
 ### 10.1 Benchmark Targets
 
-| Operation | Target (p99) | Measurement |
-|-----------|--------------|-------------|
-| Page::new() | < 10 μs | `criterion` |
-| Page::write_cell() | < 50 ns | `criterion` |
-| Region::split_horizontal() | < 1 μs | `criterion` |
-| Document::render() (1 page) | < 100 μs | `criterion` |
-| Document::render() (100 pages) | < 10 ms | `criterion` |
+| Operation                      | Target (p99) | Measurement |
+| ------------------------------ | ------------ | ----------- |
+| Page::new()                    | < 10 μs      | `criterion` |
+| Page::write_cell()             | < 50 ns      | `criterion` |
+| Region::split_horizontal()     | < 1 μs       | `criterion` |
+| Document::render() (1 page)    | < 100 μs     | `criterion` |
+| Document::render() (100 pages) | < 10 ms      | `criterion` |
 
 ### 10.2 Hot Path Optimization
 
 **Inline Hints**:
+
 ```rust
 #[inline]
 pub fn write_cell(&mut self, x: u16, y: u16, character: char, style: Style) {
@@ -1475,6 +1495,7 @@ pub fn write_cell(&mut self, x: u16, y: u16, character: char, style: Style) {
 ```
 
 **Branch Prediction**:
+
 ```rust
 // ✅ Fast path first (common case)
 if x < Self::WIDTH as u16 && y < Self::HEIGHT as u16 {
@@ -1487,12 +1508,14 @@ if x < Self::WIDTH as u16 && y < Self::HEIGHT as u16 {
 ### 10.3 Memory Allocation Minimization
 
 **Pre-allocation**:
+
 ```rust
 // Estimate output size: ~200 bytes per line × 51 lines = ~10 KB
 let mut output = Vec::with_capacity(document.page_count() * 10_240);
 ```
 
 **Avoid Allocations in Loops**:
+
 ```rust
 // ❌ Bad: Allocates on every iteration
 for y in 0..51 {
@@ -1510,11 +1533,13 @@ for y in 0..51 {
 ### 10.4 Profiling Strategy
 
 **Tools**:
+
 - `cargo-flamegraph` for CPU profiling
 - `heaptrack` or `valgrind --tool=massif` for memory profiling
 - `perf` on Linux
 
 **Profiling Commands**:
+
 ```bash
 # CPU profiling
 cargo flamegraph --bench rendering
@@ -1633,9 +1658,11 @@ fn test_deterministic_rendering() {
 ## 12. Implementation Phases
 
 ### Phase 1: Core Foundation (Week 1-2)
+
 **Goal**: Basic page model and rendering
 
 **Tasks**:
+
 - [ ] Implement `Cell`, `StyleBits`, `Style`
 - [ ] Implement `Page` with basic write operations
 - [ ] Implement `EscpRenderer` (basic line-by-line rendering)
@@ -1646,9 +1673,11 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 2: Builder API (Week 3)
+
 **Goal**: Ergonomic builder pattern
 
 **Tasks**:
+
 - [ ] Implement `DocumentBuilder`
 - [ ] Implement `PageBuilder`
 - [ ] Implement `RegionHandle` (basic write operations)
@@ -1659,9 +1688,11 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 3: Region System (Week 4)
+
 **Goal**: Hierarchical layout
 
 **Tasks**:
+
 - [ ] Implement `Region` tree structure
 - [ ] Implement `split_horizontal()`, `split_vertical()`
 - [ ] Implement padding
@@ -1672,14 +1703,16 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 4: Widget System (Week 5-6)
+
 **Goal**: Reusable content components
 
 **Tasks**:
+
 - [ ] Define `Widget` trait
 - [ ] Implement `Label`
 - [ ] Implement `Table`
 - [ ] Implement `Paragraph` (word-wrapping)
-- [ ] Implement `Box`, `TextBlock`, `KeyValue`
+- [ ] Implement `Rect`, `TextBlock`, `KeyValue`
 - [ ] Widget integration tests
 
 **Deliverable**: All 6 widgets implemented and tested
@@ -1687,9 +1720,11 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 5: Style State Machine (Week 7)
+
 **Goal**: Optimized ESC/P output
 
 **Tasks**:
+
 - [ ] Implement `StyleStateMachine`
 - [ ] Integrate with `EscpRenderer`
 - [ ] Unit tests for all state transitions
@@ -1700,9 +1735,11 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 6: Testing & Validation (Week 8)
+
 **Goal**: Hardware validation and benchmarking
 
 **Tasks**:
+
 - [ ] Create 10 hardware test forms
 - [ ] Print on EPSON LQ-2090II
 - [ ] Visual inspection and alignment verification
@@ -1715,9 +1752,11 @@ fn test_deterministic_rendering() {
 ---
 
 ### Phase 7: Documentation & Polish (Week 9)
+
 **Goal**: Production-ready release
 
 **Tasks**:
+
 - [ ] 100% rustdoc coverage
 - [ ] 5 runnable examples
 - [ ] README with quickstart
@@ -1734,13 +1773,13 @@ fn test_deterministic_rendering() {
 ### 13.1 Benchmark Code Template
 
 ```rust
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_rect, criterion_group, criterion_main, Criterion};
 use epson_lq2090_layout::*;
 
 fn bench_page_creation(c: &mut Criterion) {
     c.bench_function("Page::new()", |b| {
         b.iter(|| {
-            black_box(Page::new())
+            black_rect(Page::new())
         });
     });
 }
@@ -1753,7 +1792,7 @@ fn bench_single_page_render(c: &mut Criterion) {
 
     c.bench_function("Document::render() [1 page]", |b| {
         b.iter(|| {
-            black_box(doc.render())
+            black_rect(doc.render())
         });
     });
 }
@@ -1824,6 +1863,7 @@ jobs:
 **Document Status**: ✅ Ready for Engineering Review
 
 **Next Steps**:
+
 1. Architecture review with senior engineers
 2. Approve/revise data structure designs
 3. Begin Phase 1 implementation

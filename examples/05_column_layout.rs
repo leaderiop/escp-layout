@@ -6,8 +6,24 @@
 //! - Automatic y-position tracking
 //! - InsufficientSpace error handling
 
-use escp_layout::widget::{box_new, column_area, column_new, label_new};
+use escp_layout::widget::{rect_new, column_area, column_new, label_new};
 use escp_layout::Page;
+
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Example 5: Column Layout ===\n");
@@ -15,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.1: Simple 3-row column
     println!("5.1 Simple 3-Row Column:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut column = column_new!(80, 30);
 
         let (mut row1, pos1) = column_area!(column, 10)?;
@@ -43,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.2: Variable height rows
     println!("5.2 Variable Height Rows:");
     {
-        let mut root = box_new!(80, 40);
+        let mut root = rect_new!(80, 40);
         let mut column = column_new!(80, 40);
 
         let (mut header, header_pos) = column_area!(column, 5)?;
@@ -72,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.3: Multiple labels per row
     println!("5.3 Multiple Labels Per Row:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut column = column_new!(80, 30);
 
         for i in 0..5 {
@@ -94,13 +110,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.4: Nested content in rows
     println!("5.4 Nested Content in Rows:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut column = column_new!(80, 30);
 
         let (mut row1, pos1) = column_area!(column, 10)?;
 
-        // Add nested box inside the row
-        let mut nested = box_new!(60, 8);
+        // Add nested rect inside the row
+        let mut nested = rect_new!(60, 8);
         let label1 = label_new!(20).add_text("Nested Label 1")?;
         let label2 = label_new!(20).add_text("Nested Label 2")?;
         nested.add_child(label1, (0, 0))?;
@@ -109,7 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         row1.add_child(nested, (10, 1))?;
         root.add_child(row1, pos1)?;
 
-        println!("  Created row with nested box containing 2 labels");
+        println!("  Created row with nested rect containing 2 labels");
         println!("  ✓ Nesting works inside column rows\n");
     }
 
@@ -133,7 +149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.6: Exact fit (use all space)
     println!("5.6 Exact Fit:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut column = column_new!(80, 30);
 
         let (row1, pos1) = column_area!(column, 10)?;
@@ -155,7 +171,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example 5.7: Full render
     println!("5.7 Full Render:");
     {
-        let mut root = box_new!(80, 30);
+        let mut root = rect_new!(80, 30);
         let mut column = column_new!(80, 30);
 
         let (mut row1, pos1) = column_area!(column, 8)?;
@@ -184,9 +200,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let cell = page.get_cell(5, 2).unwrap();
         println!("  Cell at (5, 2): '{}'", cell.character());
-        println!("  ✓ Column layout rendered correctly!\n");
+        println!("  ✓ Column layout rendered correctly!");
+
+        // Print visual output
+        println!("\n  Rendered Output (80×25):");
+        print_page(&page, 80, 25);
     }
 
-    println!("=== Column Layout Example Complete ===");
+    println!("\n=== Column Layout Example Complete ===");
     Ok(())
 }

@@ -10,7 +10,7 @@
 ///
 /// # Object Safety
 /// This trait is object-safe, allowing heterogeneous widget collections via
-/// `Box<dyn Widget>`.
+/// `Rect<dyn Widget>`.
 ///
 /// # Determinism
 /// Implementations MUST produce identical output for identical inputs across

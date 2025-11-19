@@ -6,13 +6,29 @@
 //! - Combining multiple styles
 //! - Builder pattern for styling
 
-use escp_layout::widget::{box_new, label_new};
-use escp_layout::Page;
+use escp_layout::widget::{rect_new, label_new};
+use escp_layout::{Page, Document};
+
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Example 2: Styled Labels ===\n");
 
-    let mut root = box_new!(80, 30);
+    let mut root = rect_new!(80, 30);
 
     // Example 2.1: Bold text
     println!("2.1 Bold Text:");
@@ -70,6 +86,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         page.get_cell(0, 4).unwrap().style().underline());
     println!("  ✓ All styles rendered correctly!\n");
 
-    println!("=== Styled Labels Example Complete ===");
+    // Print the rendered output
+    println!("Rendered Output (80×10):");
+    println!("Note: Bold and underline styles are encoded in ESC/P but shown as plain text here");
+    print_page(&page, 80, 10);
+
+    // Show ESC/P output
+    let mut doc_builder = Document::builder();
+    doc_builder.add_page(page);
+    let document = doc_builder.build();
+    let escp_bytes = document.render();
+    println!("\nESC/P output: {} bytes (includes style codes)", escp_bytes.len());
+
+    println!("\n=== Styled Labels Example Complete ===");
     Ok(())
 }

@@ -41,7 +41,7 @@ impl Page {
     /// # Example
     /// ```rust,ignore
     /// // Build widget tree (composition phase)
-    /// let mut root = DynamicBox::new(80, 30)?;
+    /// let mut root = DynamicRect::new(80, 30)?;
     /// let mut column = Column::new(80, 30);
     ///
     /// let (mut row1, pos1) = column.area(10)?;
@@ -83,7 +83,7 @@ impl Page {
 //     // Delegate to widget's render implementation
 //     widget.render_to(context, position)?;
 //
-//     // For container widgets (e.g., DynamicBox), render_to() will:
+//     // For container widgets (e.g., DynamicRect), render_to() will:
 //     // 1. Iterate children in insertion order (deterministic)
 //     // 2. Calculate cumulative position for each child
 //     // 3. Recursively call child.render_to(context, cumulative_pos)

@@ -4,7 +4,7 @@ use super::Widget;
 
 /// Internal tree node representing a widget and its position within a parent.
 ///
-/// This type is used internally by container widgets (e.g., `Box`) to store
+/// This type is used internally by container widgets (e.g., `Rect`) to store
 /// their children.
 ///
 /// # Memory Layout

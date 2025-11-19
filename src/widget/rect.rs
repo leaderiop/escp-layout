@@ -1,4 +1,4 @@
-//! Box container widget for widget composition.
+//! Rect container widget for widget composition.
 
 use super::tree::WidgetNode;
 use super::{RenderContext, RenderError, Widget};
@@ -17,11 +17,11 @@ use super::{RenderContext, RenderError, Widget};
 /// # Examples
 ///
 /// ```rust
-/// use escp_layout::widget::{box_new, label_new};
+/// use escp_layout::widget::{rect_new, label_new};
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// // Create a container
-/// let mut container = box_new!(80, 30);
+/// let mut container = rect_new!(80, 30);
 ///
 /// // Add a child label
 /// let label = label_new!(20).add_text("Hello")?;
@@ -29,13 +29,13 @@ use super::{RenderContext, RenderError, Widget};
 /// # Ok(())
 /// # }
 /// ```
-pub struct Box<const WIDTH: u16, const HEIGHT: u16> {
+pub struct Rect<const WIDTH: u16, const HEIGHT: u16> {
     /// Children widgets with relative positions
     children: Vec<WidgetNode>,
 }
 
-impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
-    /// Create a new Box widget with const generic dimensions.
+impl<const WIDTH: u16, const HEIGHT: u16> Rect<WIDTH, HEIGHT> {
+    /// Create a new Rect widget with const generic dimensions.
     ///
     /// # Panics
     ///
@@ -46,12 +46,12 @@ impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
     /// # Examples
     ///
     /// ```rust
-    /// use escp_layout::widget::Box;
+    /// use escp_layout::widget::Rect;
     ///
-    /// let container = Box::<80, 30>::new();
+    /// let container = Rect::<80, 30>::new();
     /// ```
     pub fn new() -> Self {
-        debug_assert!(WIDTH > 0 && HEIGHT > 0, "Box dimensions must be non-zero");
+        debug_assert!(WIDTH > 0 && HEIGHT > 0, "Rect dimensions must be non-zero");
 
         Self {
             children: Vec::new(),
@@ -79,10 +79,10 @@ impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
     /// # Examples
     ///
     /// ```rust
-    /// use escp_layout::widget::{box_new, label_new};
+    /// use escp_layout::widget::{rect_new, label_new};
     ///
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut container = box_new!(80, 30);
+    /// let mut container = rect_new!(80, 30);
     /// let label = label_new!(20).add_text("Hello")?;
     /// container.add_child(label, (10, 5))?;
     /// # Ok(())
@@ -168,7 +168,7 @@ impl<const WIDTH: u16, const HEIGHT: u16> Box<WIDTH, HEIGHT> {
     }
 }
 
-impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
+impl<const WIDTH: u16, const HEIGHT: u16> Widget for Rect<WIDTH, HEIGHT> {
     const WIDTH: u16 = WIDTH;
     const HEIGHT: u16 = HEIGHT;
 
@@ -186,22 +186,22 @@ impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
     }
 }
 
-/// Ergonomic macro for creating Box widgets.
+/// Ergonomic macro for creating Rect widgets.
 ///
-/// Expands `box_new!(W, H)` to `Box::<W, H>::new()`.
+/// Expands `rect_new!(W, H)` to `Rect::<W, H>::new()`.
 ///
 /// # Examples
 ///
 /// ```rust
-/// use escp_layout::widget::box_new;
+/// use escp_layout::widget::rect_new;
 ///
-/// let container = box_new!(80, 30);
+/// let container = rect_new!(80, 30);
 /// ```
 #[macro_export]
-macro_rules! box_new {
+macro_rules! rect_new {
     ($w:expr, $h:expr) => {
-        $crate::widget::Box::<$w, $h>::new()
+        $crate::widget::Rect::<$w, $h>::new()
     };
 }
 
-pub use box_new;
+pub use rect_new;

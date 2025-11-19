@@ -16,11 +16,11 @@ use std::fmt;
 /// # Examples
 ///
 /// ```rust
-/// use escp_layout::widget::{Box, Label, RenderError, box_new, label_new};
+/// use escp_layout::widget::{Rect, Label, RenderError, rect_new, label_new};
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// let mut parent = box_new!(20, 20);
-/// let child = box_new!(30, 10);
+/// let mut parent = rect_new!(20, 20);
+/// let child = rect_new!(30, 10);
 ///
 /// match parent.add_child(child, (0, 0)) {
 ///     Err(RenderError::ChildExceedsParent { .. }) => {
@@ -37,7 +37,7 @@ use std::fmt;
 pub enum RenderError {
     /// Child widget exceeds parent widget's bounds.
     ///
-    /// Returned by `Box::add_child()` when the child's dimensions extend
+    /// Returned by `Rect::add_child()` when the child's dimensions extend
     /// beyond the parent's WIDTH or HEIGHT.
     ChildExceedsParent {
         /// Parent widget width
@@ -65,7 +65,7 @@ pub enum RenderError {
 
     /// Two or more children overlap within parent widget.
     ///
-    /// Returned by `Box::add_child()` when AABB collision detection finds
+    /// Returned by `Rect::add_child()` when AABB collision detection finds
     /// an intersection between the new child and an existing child.
     ///
     /// Note: Touching edges (shared boundary) does NOT count as overlap.

@@ -6,14 +6,30 @@
 //! - Text validation (length constraints)
 //! - Rendering labels to a page
 
-use escp_layout::widget::{label_new, box_new};
-use escp_layout::Page;
+use escp_layout::widget::{label_new, rect_new};
+use escp_layout::{Page, Document};
+
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Example 1: Basic Label Widget ===\n");
 
     // Create a root container
-    let mut root = box_new!(80, 30);
+    let mut root = rect_new!(80, 30);
 
     // Example 1.1: Simple label
     println!("1.1 Simple Label:");
@@ -67,6 +83,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cell.character(), 'H');
     println!("  ✓ Label rendered correctly!\n");
 
-    println!("=== Label Widget Example Complete ===");
+    // Print the rendered output
+    println!("Rendered Output (80×10):");
+    print_page(&page, 80, 10);
+
+    // Also show ESC/P output
+    let mut doc_builder = Document::builder();
+    doc_builder.add_page(page);
+    let document = doc_builder.build();
+    let escp_bytes = document.render();
+    println!("\nESC/P output: {} bytes", escp_bytes.len());
+
+    println!("\n=== Label Widget Example Complete ===");
     Ok(())
 }

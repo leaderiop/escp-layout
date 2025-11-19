@@ -13,6 +13,7 @@
 The widget composability system enables React-like composition of UI elements for ESC/P thermal printing. Build complex layouts from simple, reusable components with compile-time size validation, automatic coordinate calculation, and boundary enforcement.
 
 **Key Benefits**:
+
 - **Declarative composition**: Build widget trees instead of calculating coordinates manually
 - **Compile-time safety**: Const generic dimensions catch sizing errors at compile time
 - **Automatic positioning**: Parent-child relationships handle offset calculation
@@ -33,12 +34,12 @@ The widget composability system enables React-like composition of UI elements fo
 ## Quick Example (Turbofish Syntax)
 
 ```rust
-use escp_layout::widget::{Box, Column, Label};
+use escp_layout::widget::{Rect, Column, Label};
 use escp_layout::Page;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Rect<dyn std::error::Error>> {
     // Step 1: Create root container with compile-time dimensions (80 cols × 30 rows)
-    let mut root = Box::<80, 30>::new();
+    let mut root = Rect::<80, 30>::new();
 
     // Step 2: Use Column layout to divide vertical space
     let mut column = Column::<80, 30>::new();
@@ -81,12 +82,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Quick Example (Macro Syntax)
 
 ```rust
-use escp_layout::widget::{box_new, column_new, column_area, label_new};
+use escp_layout::widget::{rect_new, column_new, column_area, label_new};
 use escp_layout::Page;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Rect<dyn std::error::Error>> {
     // Step 1: Create root container (80 cols × 30 rows)
-    let mut root = box_new!(80, 30);
+    let mut root = rect_new!(80, 30);
 
     // Step 2: Use Column layout to divide vertical space
     let mut column = column_new!(80, 30);
@@ -124,6 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 **Output** (thermal printer):
+
 ```
 === Receipt ===
 
@@ -144,8 +146,9 @@ Total: $25.00
 Widget composition uses a two-phase model:
 
 1. **Composition Phase** (mutable): Build the widget tree with validation
+
    ```rust
-   let mut root = Box::<80, 30>::new();
+   let mut root = Rect::<80, 30>::new();
    root.add_child(child_widget, (10, 5))?; // Validates bounds, overlap, overflow
    ```
 
@@ -172,9 +175,10 @@ pub trait Widget {
 }
 ```
 
-**Implementation Example** (Box widget):
+**Implementation Example** (Rect widget):
+
 ```rust
-impl<const WIDTH: u16, const HEIGHT: u16> Widget for Box<WIDTH, HEIGHT> {
+impl<const WIDTH: u16, const HEIGHT: u16> Widget for Rect<WIDTH, HEIGHT> {
     const WIDTH: u16 = WIDTH;   // Const generic provides value
     const HEIGHT: u16 = HEIGHT;
 
@@ -195,41 +199,45 @@ Widgets use const generics for compile-time size specification:
 
 ```rust
 // Turbofish syntax (explicit)
-let container = Box::<80, 30>::new();
+let container = Rect::<80, 30>::new();
 let label = Label::<20, 1>::new().add_text("Hello")?;
 
 // Macro syntax (ergonomic)
-let container = box_new!(80, 30);
+let container = rect_new!(80, 30);
 let label = label_new!(20).add_text("Hello")?; // HEIGHT=1 automatic
 ```
 
 **Why const generics?**
+
 - Dimensions known at compile time (zero runtime overhead)
-- Type-safe: `Box<80, 30>` is different from `Box<40, 15>`
-- Enables compile-time validation (future Rust versions will prevent `Box<0, 10>`)
+- Type-safe: `Rect<80, 30>` is different from `Rect<40, 15>`
+- Enables compile-time validation (future Rust versions will prevent `Rect<0, 10>`)
 
 ### Validation Hierarchy
 
 The system uses a three-tier validation strategy per Constitution Principle VI:
 
 **Tier 1 - Compile-time** (preferred, zero runtime cost):
+
 ```rust
-let box1 = Box::<80, 30>::new();  // Dimensions baked into type
-let box2 = Box::<40, 15>::new();  // Different type from box1
+let rect1 = Rect::<80, 30>::new();  // Dimensions baked into type
+let rect2 = Rect::<40, 15>::new();  // Different type from rect1
 ```
 
 **Tier 2 - Development-time** (debug builds only, zero release cost):
+
 ```rust
-let box_zero = Box::<0, 10>::new();    // Panics in debug: "WIDTH must be > 0"
+let rect_zero = Rect::<0, 10>::new();    // Panics in debug: "WIDTH must be > 0"
 let label_multi = Label::<20, 2>::new(); // Panics in debug: "HEIGHT must be 1"
 ```
 
 **Tier 3 - Runtime** (only when compile-time impossible):
+
 ```rust
 let label = Label::<10, 1>::new()
     .add_text("This text is too long")?;  // Err(TextExceedsWidth)
 
-let mut parent = Box::<20, 20>::new();
+let mut parent = Rect::<20, 20>::new();
 let child1 = Label::<10, 1>::new().add_text("Child 1")?;
 let child2 = Label::<10, 1>::new().add_text("Child 2")?;
 parent.add_child(child1, (0, 0))?;       // OK
@@ -240,22 +248,23 @@ parent.add_child(child2, (5, 0))?;       // Err(OverlappingChildren)
 
 ## Widget Types
 
-### Box<WIDTH, HEIGHT> (Container)
+### Rect<WIDTH, HEIGHT> (Container)
 
 Primary container widget with compile-time dimensions:
 
 ```rust
 // Turbofish syntax
-let mut container = Box::<80, 30>::new();
+let mut container = Rect::<80, 30>::new();
 
 // Macro syntax
-let mut container = box_new!(80, 30);
+let mut container = rect_new!(80, 30);
 
 // Add children with explicit positions
 container.add_child(child_widget, (10, 5))?;
 ```
 
 **Validation**:
+
 - Child must fit within parent bounds (ChildExceedsParent error)
 - Children cannot overlap (OverlappingChildren error per AABB detection)
 - All arithmetic checked (IntegerOverflow error)
@@ -278,6 +287,7 @@ let label = label_new!(20)
 ```
 
 **Constraints**:
+
 - HEIGHT must always be 1 (enforced via debug_assert!)
 - Text length must be ≤ WIDTH (returns TextExceedsWidth error)
 - No newline characters allowed (returns TextExceedsWidth error)
@@ -286,15 +296,15 @@ let label = label_new!(20)
 
 ## Layout Components
 
-Layout components divide parent Box space and return nested Box widgets with compile-time dimensions.
+Layout components divide parent Rect space and return nested Rect widgets with compile-time dimensions.
 
 ### Column (Vertical Division)
 
 ```rust
 // Turbofish syntax
 let mut column = Column::<80, 30>::new();
-let (row1, pos1) = column.area::<10>()?;  // Box<80, 10>
-let (row2, pos2) = column.area::<20>()?;  // Box<80, 20>
+let (row1, pos1) = column.area::<10>()?;  // Rect<80, 10>
+let (row2, pos2) = column.area::<20>()?;  // Rect<80, 20>
 
 // Macro syntax
 let mut column = column_new!(80, 30);
@@ -307,8 +317,8 @@ let (row2, pos2) = column_area!(column, 20)?;
 ```rust
 // Turbofish syntax
 let mut row = Row::<80, 30>::new();
-let (col1, pos1) = row.area::<20>()?;  // Box<20, 30>
-let (col2, pos2) = row.area::<60>()?;  // Box<60, 30>
+let (col1, pos1) = row.area::<20>()?;  // Rect<20, 30>
+let (col2, pos2) = row.area::<60>()?;  // Rect<60, 30>
 
 // Macro syntax
 let mut row = row_new!(80, 30);
@@ -321,8 +331,8 @@ let (col2, pos2) = row_area!(row, 60)?;
 ```rust
 // Turbofish syntax
 let stack = Stack::<80, 30>::new();
-let (bg, pos) = stack.area();   // Box<80, 30> at (0, 0)
-let (fg, pos) = stack.area();   // Box<80, 30> at (0, 0)
+let (bg, pos) = stack.area();   // Rect<80, 30> at (0, 0)
+let (fg, pos) = stack.area();   // Rect<80, 30> at (0, 0)
 
 // Macro syntax
 let stack = stack_new!(80, 30);
@@ -349,6 +359,7 @@ pub enum RenderError {
 ```
 
 **Example Error Handling**:
+
 ```rust
 match parent.add_child(child, (10, 5)) {
     Ok(()) => println!("Child added successfully"),
@@ -369,7 +380,7 @@ match parent.add_child(child, (10, 5)) {
 ### 3-Column Layout
 
 ```rust
-let mut root = box_new!(80, 30);
+let mut root = rect_new!(80, 30);
 let mut row = row_new!(80, 30);
 
 let (mut col1, pos1) = row_area!(row, 25)?;
@@ -388,7 +399,7 @@ root.add_child(col3, pos3)?;
 ### Nested Layouts
 
 ```rust
-let mut root = box_new!(80, 30);
+let mut root = rect_new!(80, 30);
 let mut column = column_new!(80, 30);
 
 // Header row
@@ -429,20 +440,23 @@ root.add_child(footer, footer_pos)?;
 Both syntaxes are equally valid - choose based on team preference:
 
 **Turbofish** (explicit type information):
+
 ```rust
-let widget = Box::<80, 30>::new();
+let widget = Rect::<80, 30>::new();
 let label = Label::<20, 1>::new();
 ```
 
 **Macros** (concise, ergonomic):
+
 ```rust
-let widget = box_new!(80, 30);
+let widget = rect_new!(80, 30);
 let label = label_new!(20);  // HEIGHT=1 automatic
 ```
 
 ### 2. Validate in Debug Builds
 
 Run tests in debug mode to catch constraint violations:
+
 ```bash
 cargo test  # Runs in debug mode, debug_assert! active
 ```
@@ -475,7 +489,7 @@ if let Err(e) = parent.add_child(child, (10, 5)) {
 ### 5. Reuse Widgets via Immutable Rendering
 
 ```rust
-let root = box_new!(80, 30);
+let root = rect_new!(80, 30);
 // ... build widget tree ...
 
 let mut page1 = Page::new();
@@ -494,15 +508,16 @@ page2.render(&root)?;  // Reuse same widget tree
 **Problem**: `ChildExceedsParent` error during `add_child()`
 
 **Solution**: Ensure child dimensions fit within parent:
+
 ```rust
 // ❌ Wrong: Child (30×10) doesn't fit in parent (20×20)
-let mut parent = box_new!(20, 20);
-let child = box_new!(30, 10);
+let mut parent = rect_new!(20, 20);
+let child = rect_new!(30, 10);
 parent.add_child(child, (0, 0))?;  // ERROR
 
 // ✅ Correct: Child (15×10) fits in parent (20×20)
-let mut parent = box_new!(20, 20);
-let child = box_new!(15, 10);
+let mut parent = rect_new!(20, 20);
+let child = rect_new!(15, 10);
 parent.add_child(child, (0, 0))?;  // OK
 ```
 
@@ -511,8 +526,9 @@ parent.add_child(child, (0, 0))?;  // OK
 **Problem**: `OverlappingChildren` error during `add_child()`
 
 **Solution**: Ensure children don't intersect (touching edges OK):
+
 ```rust
-let mut parent = box_new!(80, 30);
+let mut parent = rect_new!(80, 30);
 let child1 = label_new!(20).add_text("Child 1")?;
 let child2 = label_new!(20).add_text("Child 2")?;
 
@@ -526,6 +542,7 @@ parent.add_child(child2, (20, 0))?;   // OK: touching edges (20 == 20) allowed
 **Problem**: `TextExceedsWidth` error during `add_text()`
 
 **Solution**: Ensure text length ≤ widget WIDTH:
+
 ```rust
 // ❌ Wrong: Text (16 chars) exceeds width (10)
 let label = label_new!(10).add_text("Too long text!")?;  // ERROR
@@ -539,6 +556,7 @@ let label = label_new!(10).add_text("Short text")?;      // OK
 **Problem**: `InsufficientSpace` error during layout `area()` call
 
 **Solution**: Ensure total allocated space ≤ layout dimensions:
+
 ```rust
 // ❌ Wrong: 10 + 15 + 10 = 35 > 30
 let mut column = column_new!(80, 30);

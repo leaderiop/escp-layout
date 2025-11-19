@@ -118,56 +118,7 @@ impl PageBuilder {
         self
     }
 
-    /// Fills a rectangular region with the specified character.
-    ///
-    /// Useful for drawing borders or background patterns.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use escp_layout::{Page, Region, StyleFlags};
-    ///
-    /// let mut builder = Page::builder();
-    /// let region = Region::new(0, 0, 80, 1).unwrap();
-    /// builder.fill_region(region, '-', StyleFlags::NONE);
-    /// ```
-    pub fn fill_region(
-        &mut self,
-        region: crate::region::Region,
-        ch: char,
-        style: StyleFlags,
-    ) -> &mut Self {
-        for y in region.y()..region.y() + region.height() {
-            for x in region.x()..region.x() + region.width() {
-                self.write_at(x, y, ch, style);
-            }
-        }
-        self
-    }
-
-    /// Renders a widget into the specified region.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use escp_layout::{Page, Region};
-    /// use escp_layout::widgets::{Widget, Label};
-    ///
-    /// let mut builder = Page::builder();
-    /// let region = Region::new(0, 0, 80, 1).unwrap();
-    /// let label = Label::new("Hello, World!");
-    /// builder.render_widget(region, &label);
-    /// ```
-    pub fn render_widget(
-        &mut self,
-        region: crate::region::Region,
-        widget: &dyn crate::widgets::Widget,
-    ) -> &mut Self {
-        widget.render(self, region);
-        self
-    }
-
-    /// Render a widget tree to this page (new widget composability system).
+    /// Render a widget tree to this page.
     ///
     /// The widget tree is traversed depth-first, with each widget rendering
     /// at its cumulative absolute position. The root widget is always positioned
@@ -184,10 +135,10 @@ impl PageBuilder {
     ///
     /// ```
     /// use escp_layout::Page;
-    /// use escp_layout::widget::{box_new, label_new};
+    /// use escp_layout::widget::{rect_new, label_new};
     ///
     /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut root = box_new!(80, 30);
+    /// let mut root = rect_new!(80, 30);
     /// let label = label_new!(20).add_text("Hello")?;
     /// root.add_child(label, (0, 0))?;
     ///
@@ -275,25 +226,6 @@ mod tests {
 
         assert_eq!(builder.cells[0][159].character(), 'A');
         // No panic occurred
-    }
-
-    #[test]
-    fn test_page_builder_fill_region() {
-        let mut builder = PageBuilder::new();
-        let region = crate::region::Region::new(0, 0, 5, 3).unwrap();
-
-        builder.fill_region(region, '-', StyleFlags::NONE);
-
-        // Check filled area
-        for y in 0..3 {
-            for x in 0..5 {
-                assert_eq!(builder.cells[y][x].character(), '-');
-            }
-        }
-
-        // Check area outside region is still empty
-        assert_eq!(builder.cells[0][5].character(), ' ');
-        assert_eq!(builder.cells[3][0].character(), ' ');
     }
 
     #[test]

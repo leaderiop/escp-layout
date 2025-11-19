@@ -31,13 +31,13 @@ pub enum RenderError {
     /// (width × height) extends beyond the parent's available space.
     ///
     /// # Context
-    /// - `parent_width`, `parent_height`: Parent Box dimensions
+    /// - `parent_width`, `parent_height`: Parent Rect dimensions
     /// - `child_width`, `child_height`: Child widget dimensions
     /// - `position`: Attempted child position within parent
     ///
     /// # Example
     /// ```rust,ignore
-    /// let mut parent = Box::<10, 10>::new();
+    /// let mut parent = Rect::<10, 10>::new();
     /// let child = Label::<26, 1>::new().add_text("This is a very long label")?;
     /// parent.add_child(child, (0, 0))?; // ERROR: 26 > 10
     /// ```
@@ -70,9 +70,9 @@ pub enum RenderError {
 
     /// Two or more children overlap within parent widget.
     ///
-    /// Returned when `add_child()` detects that the new child's bounding box
-    /// intersects with an existing child's bounding box. Uses AABB (Axis-Aligned
-    /// Bounding Box) collision detection with strict inequality per FR-005A
+    /// Returned when `add_child()` detects that the new child's bounding rect
+    /// intersects with an existing child's bounding rect. Uses AABB (Axis-Aligned
+    /// Bounding Rect) collision detection with strict inequality per FR-005A
     /// (touching edges without intersection does NOT count as overlap).
     ///
     /// # Context
@@ -81,7 +81,7 @@ pub enum RenderError {
     ///
     /// # Example
     /// ```rust,ignore
-    /// let mut parent = Box::<80, 30>::new();
+    /// let mut parent = Rect::<80, 30>::new();
     /// let label1 = Label::<20, 1>::new().add_text("Label 1")?;
     /// parent.add_child(label1, (0, 0))?; // OK
     ///
@@ -130,7 +130,7 @@ pub enum RenderError {
     ///
     /// # Example
     /// ```rust,ignore
-    /// let mut parent = Box::<100, 100>::new();
+    /// let mut parent = Rect::<100, 100>::new();
     /// let child = Label::<4, 1>::new().add_text("Text")?;
     /// parent.add_child(child, (65535, 0))?; // ERROR: 65535 + 4 overflows u16
     /// ```
@@ -168,7 +168,7 @@ pub enum RenderError {
 // 1. Compile-time (future): const generic value constraints (requires unstable
 //    Rust feature `generic_const_exprs`, not available in Rust 1.91.1+ stable)
 // 2. Development-time (PRIMARY for Rust 1.91.1): debug_assert!(WIDTH > 0 && HEIGHT > 0)
-//    in Box::new() and Label::new() - panics in debug builds, zero cost in release
+//    in Rect::new() and Label::new() - panics in debug builds, zero cost in release
 // 3. Project Policy: Zero-size widget instantiation in release builds is undefined
 //    behavior; developers MUST NOT create zero-size widgets per API documentation
 

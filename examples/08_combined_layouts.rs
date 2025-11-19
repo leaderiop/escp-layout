@@ -2,7 +2,7 @@
 //!
 //! This example demonstrates the full power of the widget composability system
 //! by combining ALL features:
-//! - Nested boxes
+//! - Nested rectes
 //! - Column layouts
 //! - Row layouts
 //! - Stack layouts
@@ -20,7 +20,23 @@
 use escp_layout::widget::{
     column_area, column_new, label_new, row_area, row_new, stack_new,
 };
-use escp_layout::Page;
+use escp_layout::{Page, Document};
+
+fn print_page(page: &Page, width: u16, height: u16) {
+    println!("┌{}┐", "─".repeat(width as usize));
+    for y in 0..height {
+        print!("│");
+        for x in 0..width {
+            if let Some(cell) = page.get_cell(x, y) {
+                print!("{}", cell.character());
+            } else {
+                print!(" ");
+            }
+        }
+        println!("│");
+    }
+    println!("└{}┘", "─".repeat(width as usize));
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("╔═══════════════════════════════════════════════════════════════════╗");
@@ -167,19 +183,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (mut item_row, row_pos) = column_area!(items_column, 3)?;
             let mut row_layout = row_new!(80, 3);
 
-            let (mut qty_box, qty_pos) = row_area!(row_layout, 10)?;
-            let (mut item_box, item_pos) = row_area!(row_layout, 30)?;
-            let (mut desc_box, desc_pos) = row_area!(row_layout, 25)?;
-            let (mut price_box, price_pos) = row_area!(row_layout, 15)?;
+            let (mut qty_rect, qty_pos) = row_area!(row_layout, 10)?;
+            let (mut item_rect, item_pos) = row_area!(row_layout, 30)?;
+            let (mut desc_rect, desc_pos) = row_area!(row_layout, 25)?;
+            let (mut price_rect, price_pos) = row_area!(row_layout, 15)?;
 
-            qty_box.add_child(label_new!(8).add_text(*qty)?, (1, 1))?;
-            item_box.add_child(label_new!(28).add_text(*item)?, (1, 1))?;
-            desc_box.add_child(label_new!(24).add_text(*desc)?, (0, 1))?;
-            price_box.add_child(label_new!(13).add_text(*price)?, (1, 1))?;
-            item_row.add_child(qty_box, qty_pos)?;
-            item_row.add_child(item_box, item_pos)?;
-            item_row.add_child(desc_box, desc_pos)?;
-            item_row.add_child(price_box, price_pos)?;
+            qty_rect.add_child(label_new!(8).add_text(*qty)?, (1, 1))?;
+            item_rect.add_child(label_new!(28).add_text(*item)?, (1, 1))?;
+            desc_rect.add_child(label_new!(24).add_text(*desc)?, (0, 1))?;
+            price_rect.add_child(label_new!(13).add_text(*price)?, (1, 1))?;
+            item_row.add_child(qty_rect, qty_pos)?;
+            item_row.add_child(item_rect, item_pos)?;
+            item_row.add_child(desc_rect, desc_pos)?;
+            item_row.add_child(price_rect, price_pos)?;
 
             items_section.add_child(item_row, row_pos)?;
         }
@@ -273,7 +289,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("║ ✓ Stack Layout       - Background watermark overlay              ║");
     println!("║ ✓ Column Layout      - 6 major vertical sections                 ║");
     println!("║ ✓ Row Layout         - Multi-column header, items, totals        ║");
-    println!("║ ✓ Nested Boxes       - 4+ levels of nesting                      ║");
+    println!("║ ✓ Nested Rectes       - 4+ levels of nesting                      ║");
     println!("║ ✓ Styled Labels      - Bold, underline, combined                 ║");
     println!("║ ✓ Grid Layout        - 5-row × 4-column item table               ║");
     println!("║ ✓ Mixed Layouts      - Column within Row within Stack            ║");
@@ -292,9 +308,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  - Total widgets: ~70\n");
 
     println!("Layout hierarchy depth: 6 levels");
-    println!("  Stack → Box → Column → Row → Box → Label\n");
+    println!("  Stack → Rect → Column → Row → Rect → Label");
 
-    println!("═══════════════════════════════════════════════════════════════════");
+    // Print the complete invoice
+    println!("\n10. Complete Invoice Visualization:");
+    print_page(&page, 80, 51);
+
+    // Show ESC/P output size
+    let mut doc_builder = Document::builder();
+    doc_builder.add_page(page);
+    let document = doc_builder.build();
+    let escp_bytes = document.render();
+    println!("\nESC/P output: {} bytes", escp_bytes.len());
+
+    println!("\n═══════════════════════════════════════════════════════════════════");
     println!("        GRAND FINALE COMPLETE - ALL FEATURES DEMONSTRATED!");
     println!("═══════════════════════════════════════════════════════════════════");
 

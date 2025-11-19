@@ -14,18 +14,21 @@ This directory contains API contracts (type signatures, trait definitions, metho
 ### Core Abstractions
 
 - **[widget_trait.rs](./widget_trait.rs)**: Widget trait definition
+
   - Core trait for all renderable components
   - Associated constants: `const WIDTH: u16; const HEIGHT: u16;`
   - Method: `fn render_to(&self, context: &mut RenderContext, position: (u16, u16)) -> Result<(), RenderError>`
-  - Object-safe for trait object usage (`Box<dyn Widget>`)
+  - Object-safe for trait object usage (`Rect<dyn Widget>`)
 
-- **[box_widget.rs](./box_widget.rs)**: Box<WIDTH, HEIGHT> widget contract
+- **[rect_widget.rs](./rect_widget.rs)**: Rect<WIDTH, HEIGHT> widget contract
+
   - Primary container widget with const generic compile-time dimensions
   - Composition API: `add_child(widget, position)` with validation (boundary, overlap, overflow)
   - Rendering API: `render_to(context, position)` delegates to children
-  - Turbofish syntax: `Box::<80, 30>::new()` or macro: `box_new!(80, 30)`
+  - Turbofish syntax: `Rect::<80, 30>::new()` or macro: `rect_new!(80, 30)`
 
 - **[label_widget.rs](./label_widget.rs)**: Label<WIDTH, HEIGHT> widget contract
+
   - Leaf widget for single-line text rendering
   - Builder pattern: `Label::<20, 1>::new().add_text("text")?.bold()`
   - HEIGHT constraint: must be 1 (enforced via debug_assert!)
@@ -49,10 +52,10 @@ This directory contains API contracts (type signatures, trait definitions, metho
 ### Layout Components
 
 - **[layout_components.rs](./layout_components.rs)**: Column, Row, Stack contracts
-  - Column: Vertical space division (returns Box<WIDTH, H> via `area::<H>()`)
-  - Row: Horizontal space division (returns Box<W, HEIGHT> via `area::<W>()`)
-  - Stack: Overlapping layers (returns Box<WIDTH, HEIGHT> via `area()`)
-  - All use const generics and return `(Box<W, H>, (u16, u16))` tuples
+  - Column: Vertical space division (returns Rect<WIDTH, H> via `area::<H>()`)
+  - Row: Horizontal space division (returns Rect<W, HEIGHT> via `area::<W>()`)
+  - Stack: Overlapping layers (returns Rect<WIDTH, HEIGHT> via `area()`)
+  - All use const generics and return `(Rect<W, H>, (u16, u16))` tuples
   - Generic methods require turbofish at call site or macro wrappers
 
 ### Page Enhancement

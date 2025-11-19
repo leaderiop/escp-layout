@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add React-like composability to the widget system while keeping the ESC/P page/backing grid model. Implement a two-phase rendering system (composition + render) with parent-child widget trees, automatic coordinate calculation, boundary enforcement via Result-based error handling, and Layout components (Column, Row, Stack) returning nested Box widgets. All widgets use compile-time const generic dimensions (WIDTH, HEIGHT) with both turbofish syntax and ergonomic macro wrappers. System enforces widget boundaries and content validation through errors while maintaining silent truncation for underlying PageBuilder/Region per Constitution Principle III Widget Exception.
+Add React-like composability to the widget system while keeping the ESC/P page/backing grid model. Implement a two-phase rendering system (composition + render) with parent-child widget trees, automatic coordinate calculation, boundary enforcement via Result-based error handling, and Layout components (Column, Row, Stack) returning nested Rect widgets. All widgets use compile-time const generic dimensions (WIDTH, HEIGHT) with both turbofish syntax and ergonomic macro wrappers. System enforces widget boundaries and content validation through errors while maintaining silent truncation for underlying PageBuilder/Region per Constitution Principle III Widget Exception.
 
 ## Technical Context
 
@@ -23,68 +23,88 @@ Add React-like composability to the widget system while keeping the ESC/P page/b
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### Principle I: Deterministic Behavior
+
 ✅ **PASS** - Widget composition uses deterministic tree traversal; no HashMap iteration; integer-only arithmetic; const generic dimensions ensure consistent sizing
 
 ### Principle II: V1 Specification Freeze
+
 ✅ **PASS** - Widget system builds on existing 160×51 page grid; no dynamic page sizing; static layout only; maintains ESC/P text mode
 
 ### Principle III: Strict Truncation and Clipping (with Widget Exception)
+
 ✅ **PASS (with documented exception)** - Feature explicitly uses Constitution Principle III Widget Exception amendment (added 2025-11-19): Widget boundary violations return `Result<(), RenderError>` with specific error variants (ChildExceedsParent, OutOfBounds, OverlappingChildren, TextExceedsWidth). Underlying PageBuilder/Region maintain silent truncation. Three-layer validation architecture documented in FR-004.
 
 ### Principle IV: Immutability Guarantees
+
 ✅ **PASS** - Widget tree built in composition phase (mutable `add_child` calls), then rendered immutably via `&impl Widget` borrows; widgets can be rendered multiple times without rebuilding tree; Page::render takes `&mut self, widget: &impl Widget`
 
 ### Principle V: ESC/P Text-Mode Compliance
+
 ✅ **PASS** - Widget rendering delegates to existing PageBuilder; maintains ESC/P command compliance; ASCII-only output preserved; no graphics modes
 
 ### Principle VI: Stable Rust Builder API Design
-✅ **PASS** - MSRV: Rust 1.91.1+; const generics for compile-time dimensions; two equivalent syntaxes (turbofish `Box::<80, 30>::new()` vs macro `box_new!(80, 30)`); Result-based error handling; validation hierarchy: compile-time (const generics) > development-time (debug_assert!) > runtime (Result for user data); zero unsafe code planned
+
+✅ **PASS** - MSRV: Rust 1.91.1+; const generics for compile-time dimensions; two equivalent syntaxes (turbofish `Rect::<80, 30>::new()` vs macro `rect_new!(80, 30)`); Result-based error handling; validation hierarchy: compile-time (const generics) > development-time (debug_assert!) > runtime (Result for user data); zero unsafe code planned
 
 ### Principle VII: Zero Runtime Dependencies
+
 ✅ **PASS** - Feature uses only Rust `std`; no external crates required; builds on existing Page/PageBuilder infrastructure
 
 ### Principle VIII: Fixed-Layout Constraints
+
 ✅ **PASS** - All widget dimensions specified at construction time via const generics; no content-based auto-sizing; no constraint solvers; Widget trait has associated constants `const WIDTH: u16; const HEIGHT: u16;`
 
 ### Principle IX: Zero-Panic Guarantee
-✅ **PASS** - Release builds guaranteed panic-free; boundary violations return Result errors; debug_assert! used for contract violations (e.g., zero-size Box, Label HEIGHT ≠ 1); documented constraint violations have undefined behavior in release builds per constitution policy
+
+✅ **PASS** - Release builds guaranteed panic-free; boundary violations return Result errors; debug_assert! used for contract violations (e.g., zero-size Rect, Label HEIGHT ≠ 1); documented constraint violations have undefined behavior in release builds per constitution policy
 
 ### Principle X: Memory Efficiency and Predictability
-⚠️ **REVIEW REQUIRED** - Total page memory budget: < 128 KB per page (updated from original < 16 KB page model constraint). Widget tree overhead: children stored as `Vec<WidgetNode>` where `WidgetNode { widget: Box<dyn Widget>, position: (u16, u16) }`. Need to verify widget tree memory usage stays within budget. Box heap allocation accepted for simplicity per clarification (2025-11-19).
+
+⚠️ **REVIEW REQUIRED** - Total page memory budget: < 128 KB per page (updated from original < 16 KB page model constraint). Widget tree overhead: children stored as `Vec<WidgetNode>` where `WidgetNode { widget: Rect<dyn Widget>, position: (u16, u16) }`. Need to verify widget tree memory usage stays within budget. Rect heap allocation accepted for simplicity per clarification (2025-11-19).
 
 ### Principle XI: Performance Targets
+
 ✅ **PASS** - Single-pass tree traversal during render; const generics enable compile-time validation (zero runtime overhead); inline hints planned for hot path; no allocations in render loop (pre-allocated widget tree)
 
 ### Principle XII: Comprehensive Testing Requirements
+
 ✅ **PASS** - Success Criterion SC-006 mandates compilable example in examples/ directory with test coverage in tests/widget/integration.rs; unit tests for widget construction, composition errors, boundary validation; integration tests for multi-level nesting (≥3 levels per SC-006); property-based tests for overlap detection, coordinate overflow; golden master tests for widget output
 
 ### Principle XIII: API Stability and Versioning
-✅ **PASS** - New public APIs added (Widget trait, Box, Label, Layout components, RenderError, RenderContext); no breaking changes to existing Page/PageBuilder APIs; RenderError marked #[non_exhaustive] for future expansion without breaking changes
+
+✅ **PASS** - New public APIs added (Widget trait, Rect, Label, Layout components, RenderError, RenderContext); no breaking changes to existing Page/PageBuilder APIs; RenderError marked #[non_exhaustive] for future expansion without breaking changes
 
 ### Principle XIV: Documentation Requirements
+
 ✅ **PASS** - FR-007C, Constitution Principle VI, and glossary require extensive rustdoc with `# Panics` sections documenting debug_assert! behavior and undefined behavior in release builds; both turbofish and macro syntaxes must be documented; quickstart.md generation planned in Phase 1
 
 ### Principle XV: Security and Safety
+
 ✅ **PASS** - Zero unsafe code; widget content validation at construction (TextExceedsWidth error); AABB overlap detection using checked arithmetic (IntegerOverflow error); const generics prevent many invalid states at compile-time; debug_assert! for contract violations
 
 ### Principle XVI: Specification Validation Process
+
 ✅ **PASS** - Feature approved via spec.md; no breaking changes to frozen V1 API; builds on existing infrastructure; Constitution amendments (Principle III Widget Exception v1.1.0, v1.2.0) approved and documented
 
 ### Principle XVII: Code Review Standards
+
 ✅ **PASS** - Feature plan follows Rust API guidelines; validation strategy documented (compile-time > debug_assert! > runtime); const generic widget construction; comprehensive test coverage planned; widget content validation via Result errors
 
 ### Principle XVIII: V2+ Feature Planning
+
 ✅ **PASS** - Widget composability is foundational for future V2 features (dynamic sizing, constraint-based layout); architecture maintains V1 fixed-layout constraints while enabling future extension
 
 ### Summary
+
 **Status**: ✅ **APPROVED** (with memory review in Phase 1)
 **Violations**: None
 **Review Items**:
+
 - Memory profiling during Phase 1 implementation to verify < 128 KB per page budget
-- Verify widget tree overhead calculation: estimate ~40 bytes per WidgetNode (24 bytes Box<dyn Widget> + 4 bytes position + vtable overhead)
+- Verify widget tree overhead calculation: estimate ~40 bytes per WidgetNode (24 bytes Rect<dyn Widget> + 4 bytes position + vtable overhead)
 - For 100 widgets per page: ~4 KB widget tree overhead, well within 128 KB budget
 - Document memory layout in data-model.md during Phase 1
 
@@ -108,10 +128,10 @@ specs/[###-feature]/
 src/
 ├── widget/
 │   ├── mod.rs              # Widget trait definition with associated constants
-│   ├── box_widget.rs       # Box<WIDTH, HEIGHT> container implementation
+│   ├── rect_widget.rs       # Rect<WIDTH, HEIGHT> container implementation
 │   ├── label.rs            # Label<WIDTH, HEIGHT> leaf widget
 │   ├── tree.rs             # WidgetNode and widget tree structures
-│   └── macros.rs           # Ergonomic macros (box_new!, label_new!, etc.)
+│   └── macros.rs           # Ergonomic macros (rect_new!, label_new!, etc.)
 ├── layout/
 │   ├── mod.rs              # Layout component traits
 │   ├── column.rs           # Column<WIDTH, HEIGHT> layout component
@@ -128,7 +148,7 @@ src/
 
 tests/
 ├── widget/
-│   ├── box_tests.rs        # Box widget unit tests
+│   ├── rect_tests.rs        # Rect widget unit tests
 │   ├── label_tests.rs      # Label widget unit tests
 │   ├── composition.rs      # Composition phase tests (add_child)
 │   ├── validation.rs       # Boundary/overlap validation tests
