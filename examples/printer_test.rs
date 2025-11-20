@@ -10,8 +10,8 @@
 //!   cargo run --example printer_test -- row_layout
 //!   cargo run --example printer_test -- all
 
-use escp_layout::widget::{label_new, rect_new, row_area, row_new, column_area, column_new};
-use escp_layout::{Page, Document};
+use escp_layout::widget::{column_area, column_new, label_new, rect_new, row_area, row_new};
+use escp_layout::{Document, Page};
 use std::env;
 use std::fs::File;
 use std::io::Write;
@@ -28,7 +28,12 @@ fn send_to_printer(escp_bytes: &[u8], job_name: &str) -> Result<(), Box<dyn std:
     file.flush()?;
     drop(file);
 
-    println!("Sending {} bytes to printer {} (job: {})", escp_bytes.len(), PRINTER_NAME, job_name);
+    println!(
+        "Sending {} bytes to printer {} (job: {})",
+        escp_bytes.len(),
+        PRINTER_NAME,
+        job_name
+    );
 
     // Send to printer using lpr
     let output = Command::new("lpr")
@@ -217,7 +222,10 @@ fn test_all() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Running All Tests ===\n");
 
     let tests = vec![
-        ("basic_label", test_basic_label as fn() -> Result<Vec<u8>, Box<dyn std::error::Error>>),
+        (
+            "basic_label",
+            test_basic_label as fn() -> Result<Vec<u8>, Box<dyn std::error::Error>>,
+        ),
         ("row_layout", test_row_layout),
         ("column_layout", test_column_layout),
         ("box_container", test_box_container),

@@ -11,21 +11,29 @@ keywords = ["escp", "printer", "layout", "epson", "dot-matrix"]
 categories = ["text-processing", "rendering"]
 
 [dependencies]
-# Zero runtime dependencies (only Rust std)
+# Required for error handling in printer driver
+thiserror = "2.0"
 
 [dev-dependencies]
 proptest = "1.4"
 criterion = "0.5"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [features]
 default = []
 serde = ["dep:serde_dep"]
+tracing = ["dep:tracing"]
 
 [dependencies.serde_dep]
 package = "serde"
 version = "1.0"
 features = ["derive"]
 optional = true
+
+[dependencies.tracing]
+version = "0.1"
+optional = true
+default-features = false
 
 [profile.release]
 lto = true

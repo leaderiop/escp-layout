@@ -27,10 +27,10 @@
 //! # }
 //! ```
 
-mod rect;
 mod context;
 mod label;
 pub mod layout;
+mod rect;
 mod tree;
 
 // Re-export core types
@@ -46,12 +46,12 @@ pub use error::RenderError;
 mod error;
 
 // Re-export widgets
-pub use rect::Rect;
 pub use label::Label;
+pub use rect::Rect;
 
 // Re-export macros
-pub use rect::rect_new;
 pub use label::label_new;
+pub use rect::rect_new;
 
 // Re-export layout components (will be added in Phase 5)
 pub use layout::{column_area, column_new, row_area, row_new, stack_new, Column, Row, Stack};

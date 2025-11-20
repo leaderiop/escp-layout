@@ -62,7 +62,6 @@ fn test_overflow_write_str_at_page_edge() {
     // No panic should occur
 }
 
-
 #[test]
 fn test_overflow_write_beyond_page_dimensions() {
     let mut page_builder = Page::builder();

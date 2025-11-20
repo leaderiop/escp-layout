@@ -6,7 +6,7 @@
 //! - Automatic y-position tracking
 //! - InsufficientSpace error handling
 
-use escp_layout::widget::{rect_new, column_area, column_new, label_new};
+use escp_layout::widget::{column_area, column_new, label_new, rect_new};
 use escp_layout::Page;
 
 fn print_page(page: &Page, width: u16, height: u16) {
@@ -94,8 +94,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for i in 0..5 {
             let (mut row, pos) = column_area!(column, 5)?;
 
-            let label1 = label_new!(20).add_text(&format!("Row {} Left", i))?;
-            let label2 = label_new!(20).add_text(&format!("Row {} Right", i))?;
+            let label1 = label_new!(20).add_text(format!("Row {} Left", i))?;
+            let label2 = label_new!(20).add_text(format!("Row {} Right", i))?;
 
             row.add_child(label1, (0, 1))?;
             row.add_child(label2, (30, 1))?;
@@ -134,8 +134,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let mut column = column_new!(80, 30);
 
-        let _ = column_area!(column, 15)?;  // 15 rows used
-        let _ = column_area!(column, 10)?;  // 25 rows used
+        let _ = column_area!(column, 15)?; // 15 rows used
+        let _ = column_area!(column, 10)?; // 25 rows used
 
         // Try to allocate 10 more rows (only 5 available)
         let result = column_area!(column, 10);
@@ -154,7 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let (row1, pos1) = column_area!(column, 10)?;
         let (row2, pos2) = column_area!(column, 10)?;
-        let (row3, pos3) = column_area!(column, 10)?;  // Exactly 30 rows total
+        let (row3, pos3) = column_area!(column, 10)?; // Exactly 30 rows total
 
         root.add_child(row1, pos1)?;
         root.add_child(row2, pos2)?;

@@ -3,7 +3,7 @@
 //! Shows the exact byte sequence being sent to printer
 
 use escp_layout::widget::{label_new, rect_new};
-use escp_layout::{Page, Document};
+use escp_layout::{Document, Page};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n=== ESC/P Output Diagnostic ===\n");
@@ -100,10 +100,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let first_line = &page.cells()[0];
     let last_line = &page.cells()[50];
 
-    println!("  First line (0): {} chars",
-        first_line.iter().filter(|c| c.character() != ' ').count());
-    println!("  Last line (50): {} chars",
-        last_line.iter().filter(|c| c.character() != ' ').count());
+    println!(
+        "  First line (0): {} chars",
+        first_line.iter().filter(|c| c.character() != ' ').count()
+    );
+    println!(
+        "  Last line (50): {} chars",
+        last_line.iter().filter(|c| c.character() != ' ').count()
+    );
 
     // Show where content is
     println!("\nContent positions on first page:");
@@ -116,8 +120,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .iter()
                 .map(|c| c.character())
                 .collect();
-            println!("  Line {:2}: col {:3}, {} chars: '{}'",
-                y, first_char_x, content_count, content);
+            println!(
+                "  Line {:2}: col {:3}, {} chars: '{}'",
+                y, first_char_x, content_count, content
+            );
         }
     }
 

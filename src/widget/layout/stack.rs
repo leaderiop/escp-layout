@@ -18,6 +18,12 @@ use crate::widget::Rect;
 /// ```
 pub struct Stack<const WIDTH: u16, const HEIGHT: u16>;
 
+impl<const WIDTH: u16, const HEIGHT: u16> Default for Stack<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: u16, const HEIGHT: u16> Stack<WIDTH, HEIGHT> {
     /// Create a Stack layout with const generic parent dimensions.
     ///

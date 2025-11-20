@@ -34,6 +34,12 @@ pub struct Rect<const WIDTH: u16, const HEIGHT: u16> {
     children: Vec<WidgetNode>,
 }
 
+impl<const WIDTH: u16, const HEIGHT: u16> Default for Rect<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: u16, const HEIGHT: u16> Rect<WIDTH, HEIGHT> {
     /// Create a new Rect widget with const generic dimensions.
     ///

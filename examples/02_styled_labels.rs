@@ -6,8 +6,8 @@
 //! - Combining multiple styles
 //! - Builder pattern for styling
 
-use escp_layout::widget::{rect_new, label_new};
-use escp_layout::{Page, Document};
+use escp_layout::widget::{label_new, rect_new};
+use escp_layout::{Document, Page};
 
 fn print_page(page: &Page, width: u16, height: u16) {
     println!("┌{}┐", "─".repeat(width as usize));
@@ -80,10 +80,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Verification:");
     let cell = page.get_cell(0, 0).unwrap();
     println!("  Cell at (0, 0) has bold: {}", cell.style().bold());
-    println!("  Cell at (0, 2) has underline: {}", page.get_cell(0, 2).unwrap().style().underline());
-    println!("  Cell at (0, 4) has both: bold={}, underline={}",
+    println!(
+        "  Cell at (0, 2) has underline: {}",
+        page.get_cell(0, 2).unwrap().style().underline()
+    );
+    println!(
+        "  Cell at (0, 4) has both: bold={}, underline={}",
         page.get_cell(0, 4).unwrap().style().bold(),
-        page.get_cell(0, 4).unwrap().style().underline());
+        page.get_cell(0, 4).unwrap().style().underline()
+    );
     println!("  ✓ All styles rendered correctly!\n");
 
     // Print the rendered output
@@ -96,7 +101,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     doc_builder.add_page(page);
     let document = doc_builder.build();
     let escp_bytes = document.render();
-    println!("\nESC/P output: {} bytes (includes style codes)", escp_bytes.len());
+    println!(
+        "\nESC/P output: {} bytes (includes style codes)",
+        escp_bytes.len()
+    );
 
     println!("\n=== Styled Labels Example Complete ===");
     Ok(())

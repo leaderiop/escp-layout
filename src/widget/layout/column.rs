@@ -23,6 +23,12 @@ pub struct Column<const WIDTH: u16, const HEIGHT: u16> {
     current_y: u16,
 }
 
+impl<const WIDTH: u16, const HEIGHT: u16> Default for Column<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: u16, const HEIGHT: u16> Column<WIDTH, HEIGHT> {
     /// Create a Column layout with const generic parent dimensions.
     ///

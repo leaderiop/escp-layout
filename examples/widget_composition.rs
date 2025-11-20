@@ -6,8 +6,8 @@
 //! - Apply styling to labels
 //! - Render widget trees to pages
 
-use escp_layout::widget::{rect_new, column_area, column_new, label_new, row_area, row_new};
-use escp_layout::{Page, Document};
+use escp_layout::widget::{column_area, column_new, label_new, rect_new, row_area, row_new};
+use escp_layout::{Document, Page};
 
 fn print_page(page: &Page, width: u16, height: u16) {
     println!("  ┌{}┐", "─".repeat(width as usize));

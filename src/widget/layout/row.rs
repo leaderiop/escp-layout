@@ -23,6 +23,12 @@ pub struct Row<const WIDTH: u16, const HEIGHT: u16> {
     current_x: u16,
 }
 
+impl<const WIDTH: u16, const HEIGHT: u16> Default for Row<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: u16, const HEIGHT: u16> Row<WIDTH, HEIGHT> {
     /// Create a Row layout with const generic parent dimensions.
     ///

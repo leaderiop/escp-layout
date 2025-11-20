@@ -6,7 +6,7 @@
 //! - Automatic cumulative coordinate calculation
 //! - Deep nesting (multiple levels)
 
-use escp_layout::widget::{rect_new, label_new};
+use escp_layout::widget::{label_new, rect_new};
 use escp_layout::Page;
 
 fn print_page(page: &Page, width: u16, height: u16) {
@@ -126,9 +126,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut inner = rect_new!(40, 20);
         let label = label_new!(15).add_text("Test")?;
 
-        inner.add_child(label, (10, 8))?;   // Position in inner
-        outer.add_child(inner, (15, 5))?;   // Position in outer
-        root.add_child(outer, (5, 2))?;     // Position in root
+        inner.add_child(label, (10, 8))?; // Position in inner
+        outer.add_child(inner, (15, 5))?; // Position in outer
+        root.add_child(outer, (5, 2))?; // Position in root
 
         // Expected absolute position: (5 + 15 + 10, 2 + 5 + 8) = (30, 15)
 

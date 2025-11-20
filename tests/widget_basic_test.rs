@@ -1,6 +1,6 @@
 //! Basic integration test for widget composability system.
 
-use escp_layout::widget::{rect_new, label_new};
+use escp_layout::widget::{label_new, rect_new};
 use escp_layout::Page;
 
 #[test]

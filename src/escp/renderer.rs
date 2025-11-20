@@ -14,15 +14,15 @@ pub(crate) fn render_document(doc: &Document) -> Vec<u8> {
     let mut output = Vec::new();
 
     // Initialization sequence
-    output.extend_from_slice(ESC_RESET);           // ESC @ - Reset printer
-    output.extend_from_slice(SI_CONDENSED);        // SI - Condensed mode
-    output.extend_from_slice(ESC_PAGE_LENGTH_50);  // ESC C 50 - Set 50-line pages
+    output.extend_from_slice(ESC_RESET); // ESC @ - Reset printer
+    output.extend_from_slice(SI_CONDENSED); // SI - Condensed mode
+    output.extend_from_slice(ESC_PAGE_LENGTH_50); // ESC C 50 - Set 50-line pages
 
     // Render each page
     for page in doc.pages() {
         render_page(page, &mut output);
         // Form feed to next page (no CR needed - last line already has CR+LF)
-        output.push(FF);  // Form feed to next page
+        output.push(FF); // Form feed to next page
     }
 
     output

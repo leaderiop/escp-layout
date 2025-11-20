@@ -115,9 +115,9 @@ fn test_identical_pages_produce_identical_sequences() {
 
     // Split by form-feed (0x0C)
     let mut page_sequences = Vec::new();
-    let mut start = 3; // Skip initialization bytes (ESC @ SI)
+    let mut start = 6; // Skip initialization bytes (ESC @ SI ESC C 50)
 
-    for (i, &byte) in bytes.iter().enumerate().skip(3) {
+    for (i, &byte) in bytes.iter().enumerate().skip(6) {
         if byte == 0x0C {
             page_sequences.push(&bytes[start..i]);
             start = i + 1;

@@ -9,25 +9,30 @@
 //!   cargo run --example multipage_test
 
 use escp_layout::widget::{label_new, rect_new};
-use escp_layout::{Page, Document};
+use escp_layout::{Document, Page};
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 
 const PRINTER_NAME: &str = "EPSON_LQ_2090II";
 const PAGE_WIDTH: u16 = 80;
-const PAGE_HEIGHT: u16 = 50;  // EPSON LQ-2090II page height (line 50 reserved)
+const PAGE_HEIGHT: u16 = 50; // EPSON LQ-2090II page height (line 50 reserved)
 
 /// Send ESC/P bytes to printer via CUPS
 fn send_to_printer(escp_bytes: &[u8], job_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Write to temporary file
-    let temp_path = format!("/tmp/escp_multipage_test.prn");
+    let temp_path = "/tmp/escp_multipage_test.prn".to_string();
     let mut file = File::create(&temp_path)?;
     file.write_all(escp_bytes)?;
     file.flush()?;
     drop(file);
 
-    println!("Sending {} bytes to printer {} (job: {})", escp_bytes.len(), PRINTER_NAME, job_name);
+    println!(
+        "Sending {} bytes to printer {} (job: {})",
+        escp_bytes.len(),
+        PRINTER_NAME,
+        job_name
+    );
 
     // Send to printer using lpr
     let output = Command::new("lpr")
@@ -54,17 +59,20 @@ fn create_page(page_number: u16) -> Result<Page, Box<dyn std::error::Error>> {
     let mut root = rect_new!(PAGE_WIDTH, PAGE_HEIGHT);
 
     // Page number at the top (line 0)
-    let top_label = label_new!(60).add_text(&format!("Page {}", page_number))?;
+    let top_label = label_new!(60).add_text(format!("Page {}", page_number))?;
     root.add_child(top_label, (10, 0))?;
 
     // Content in the middle
-    let title = label_new!(60).add_text(&format!("EPSON LQ-2090II Multi-Page Test - Page {}", page_number))?;
+    let title = label_new!(60).add_text(format!(
+        "EPSON LQ-2090II Multi-Page Test - Page {}",
+        page_number
+    ))?;
     root.add_child(title, (10, 5))?;
 
     let description = label_new!(70).add_text("This is a test of multi-page ESC/P printing.")?;
     root.add_child(description, (5, 10))?;
 
-    let line1 = label_new!(70).add_text(&format!("Current page: {}/2", page_number))?;
+    let line1 = label_new!(70).add_text(format!("Current page: {}/2", page_number))?;
     root.add_child(line1, (5, 15))?;
 
     let line2 = label_new!(70).add_text("Each page has page numbers at top and bottom.")?;
@@ -73,24 +81,26 @@ fn create_page(page_number: u16) -> Result<Page, Box<dyn std::error::Error>> {
     let line3 = label_new!(70).add_text("Printer resets after each form feed.")?;
     root.add_child(line3, (5, 20))?;
 
-    let line4 = label_new!(70).add_text(&format!("Testing 50-line page height"))?;
+    let line4 = label_new!(70).add_text("Testing 50-line page height".to_string())?;
     root.add_child(line4, (5, 22))?;
 
     // Add some additional content unique to each page
     match page_number {
         1 => {
-            let content = label_new!(70).add_text("Page 1: Testing basic layout and page breaks")?;
+            let content =
+                label_new!(70).add_text("Page 1: Testing basic layout and page breaks")?;
             root.add_child(content, (5, 25))?;
         }
         2 => {
-            let content = label_new!(70).add_text("Page 2: Testing printer reset - End of document")?;
+            let content =
+                label_new!(70).add_text("Page 2: Testing printer reset - End of document")?;
             root.add_child(content, (5, 25))?;
         }
         _ => {}
     }
 
     // Page number at the bottom (last line)
-    let bottom_label = label_new!(60).add_text(&format!("End of Page {}", page_number))?;
+    let bottom_label = label_new!(60).add_text(format!("End of Page {}", page_number))?;
     root.add_child(bottom_label, (10, PAGE_HEIGHT - 1))?;
 
     // Render to page
@@ -121,7 +131,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\nDocument Statistics:");
     println!("  Total pages: 2");
-    println!("  Page dimensions: {}×{} (columns×lines)", PAGE_WIDTH, PAGE_HEIGHT);
+    println!(
+        "  Page dimensions: {}×{} (columns×lines)",
+        PAGE_WIDTH, PAGE_HEIGHT
+    );
     println!("  Total ESC/P output: {} bytes", escp_bytes.len());
     println!("  Average per page: {} bytes", escp_bytes.len() / 2);
     println!("  Page length configured: ESC C 50 (50 lines per page)");

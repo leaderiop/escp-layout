@@ -6,7 +6,7 @@
 //! - Automatic x-position tracking
 //! - Creating multi-column layouts
 
-use escp_layout::widget::{rect_new, label_new, row_area, row_new};
+use escp_layout::widget::{label_new, rect_new, row_area, row_new};
 use escp_layout::Page;
 
 fn print_page(page: &Page, width: u16, height: u16) {
@@ -94,9 +94,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for i in 0..4 {
             let (mut col, pos) = row_area!(row, 20)?;
 
-            let label1 = label_new!(18).add_text(&format!("Col {} Top", i))?;
-            let label2 = label_new!(18).add_text(&format!("Col {} Mid", i))?;
-            let label3 = label_new!(18).add_text(&format!("Col {} Bot", i))?;
+            let label1 = label_new!(18).add_text(format!("Col {} Top", i))?;
+            let label2 = label_new!(18).add_text(format!("Col {} Mid", i))?;
+            let label3 = label_new!(18).add_text(format!("Col {} Bot", i))?;
 
             col.add_child(label1, (0, 0))?;
             col.add_child(label2, (0, 10))?;
@@ -145,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         for i in 0..5 {
             let (mut col, pos) = row_area!(row, 16)?;
-            let label = label_new!(12).add_text(&format!("Col {}", i + 1))?;
+            let label = label_new!(12).add_text(format!("Col {}", i + 1))?;
             col.add_child(label, (2, 5))?;
             root.add_child(col, pos)?;
         }
@@ -159,8 +159,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let mut row = row_new!(80, 30);
 
-        let _ = row_area!(row, 30)?;  // 30 cols used
-        let _ = row_area!(row, 40)?;  // 70 cols used
+        let _ = row_area!(row, 30)?; // 30 cols used
+        let _ = row_area!(row, 40)?; // 70 cols used
 
         // Try to allocate 20 more cols (only 10 available)
         let result = row_area!(row, 20);

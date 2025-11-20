@@ -6,7 +6,7 @@
 //! - Positioning children with explicit coordinates
 //! - Boundary validation and error handling
 
-use escp_layout::widget::{rect_new, label_new};
+use escp_layout::widget::{label_new, rect_new};
 use escp_layout::Page;
 
 fn print_page(page: &Page, width: u16, height: u16) {
@@ -64,8 +64,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let label3 = label_new!(20).add_text("Label 3")?;
 
         container.add_child(label1, (0, 0))?;
-        container.add_child(label2, (20, 0))?;  // Touches right edge of label1
-        container.add_child(label3, (40, 0))?;  // Touches right edge of label2
+        container.add_child(label2, (20, 0))?; // Touches right edge of label1
+        container.add_child(label3, (40, 0))?; // Touches right edge of label2
 
         println!("  ✓ Created 3 adjacent labels (edges touching)\n");
     }
@@ -109,7 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let label2 = label_new!(20).add_text("Label 2")?;
 
         container.add_child(label1, (0, 0))?;
-        let result = container.add_child(label2, (10, 0));  // Overlaps with label1
+        let result = container.add_child(label2, (10, 0)); // Overlaps with label1
 
         match result {
             Err(e) => println!("  ✓ Correctly rejected overlapping child: {}\n", e),
@@ -133,7 +133,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let page = page_builder.build();
 
         let cell = page.get_cell(10, 5).unwrap();
-        println!("  ✓ Rendered successfully, cell at (10, 5): '{}'", cell.character());
+        println!(
+            "  ✓ Rendered successfully, cell at (10, 5): '{}'",
+            cell.character()
+        );
 
         // Print visual output
         println!("\n  Rendered Output (40×20):");

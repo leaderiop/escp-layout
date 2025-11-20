@@ -7,7 +7,7 @@
 //! - Rendering labels to a page
 
 use escp_layout::widget::{label_new, rect_new};
-use escp_layout::{Page, Document};
+use escp_layout::{Document, Page};
 
 fn print_page(page: &Page, width: u16, height: u16) {
     println!("┌{}┐", "─".repeat(width as usize));

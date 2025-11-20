@@ -42,6 +42,12 @@ pub struct Label<const WIDTH: u16, const HEIGHT: u16> {
     style: StyleFlags,
 }
 
+impl<const WIDTH: u16, const HEIGHT: u16> Default for Label<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const WIDTH: u16, const HEIGHT: u16> Label<WIDTH, HEIGHT> {
     /// Create a new Label with specified const generic dimensions.
     ///

@@ -17,10 +17,8 @@
 //! - Footer with terms and conditions
 //! - Background watermark overlay
 
-use escp_layout::widget::{
-    column_area, column_new, label_new, row_area, row_new, stack_new,
-};
-use escp_layout::{Page, Document};
+use escp_layout::widget::{column_area, column_new, label_new, row_area, row_new, stack_new};
+use escp_layout::{Document, Page};
 
 fn print_page(page: &Page, width: u16, height: u16) {
     println!("┌{}┐", "─".repeat(width as usize));
@@ -51,10 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // === BACKGROUND LAYER: Watermark ===
     println!("1. Creating Background Watermark...");
     {
-        let watermark = label_new!(40)
-            .add_text("COPY")?
-            .bold()
-            .underline();
+        let watermark = label_new!(40).add_text("COPY")?.bold().underline();
         background.add_child(watermark, (20, 25))?;
     }
     println!("   ✓ Watermark added at center\n");
@@ -240,7 +235,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let terms_header = label_new!(40).add_text("Terms and Conditions:")?.bold();
         let term1 = label_new!(70).add_text("Payment due within 30 days of invoice date.")?;
         let term2 = label_new!(70).add_text("Late payments subject to 1.5% monthly interest.")?;
-        let term3 = label_new!(70).add_text("All sales final. No returns without authorization.")?;
+        let term3 =
+            label_new!(70).add_text("All sales final. No returns without authorization.")?;
         let thank_you = label_new!(40)
             .add_text("Thank you for your business!")?
             .bold();
